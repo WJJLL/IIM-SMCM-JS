@@ -1,10 +1,3 @@
-# Intra-Image Mining and Symmetric Maximum Concept Matching for Few-Shot Out-of-Distribution Detection
-
-Few-shot out-of-distribution (OOD) detection with a frozen CLIP backbone. The
-detector learns class-specific local prompts plus a set of negative prompts, and
-scores a test image by matching its global feature against frozen global prompts
-and its local (patch) features against the learned local/negative prompts.
-
 This release contains the training code, the evaluation code and the
 configuration for the IIM baseline, the LocalPrompt baseline and the zero-shot
 CLIP baseline, together with two optional **test-time score post-processing**
