@@ -1,88 +1,21 @@
-# Intra-Image Mining and Symmetric Maximum Concept Matching for Few Shot Out-of-Distribution Detection  (AAAI 2026)
+# Intra-Image Mining and Symmetric Maximum Concept Matching for Few-Shot Out-of-Distribution Detection
 
+Few-shot out-of-distribution (OOD) detection with a frozen CLIP backbone. The
+detector learns class-specific local prompts plus a set of negative prompts, and
+scores a test image by matching its global feature against frozen global prompts
+and its local (patch) features against the learned local/negative prompts.
 
-> Intra-Image Mining and Symmetric Maximum Concept Matching for Few Shot Out-of-Distribution Detection
->
-> Kaixiang Chen, Pengfei Fang and Hui Xue
+This release contains the training code, the evaluation code and the
+configuration for the IIM baseline, the LocalPrompt baseline and the zero-shot
+CLIP baseline, together with two optional **test-time score post-processing**
+terms (global JS / spatial JS, see [below](#global-js--spatial-js-score-post-processing)).
 
-[//]: # ()
-[//]: # ([![arXiv]&#40;https://img.shields.io/badge/Arxiv-2409.04796-b31b1b.svg?logo=arXiv&#41;]&#40;https://arxiv.org/abs/2409.04796&#41;)
+## Quick Start
 
-[//]: # ([![ICLR]&#40;https://img.shields.io/badge/OpenReview-Paper-orange.svg&#41;]&#40;https://openreview.net/pdf?id=Ew3VifXaxZ&#41;)
+### Environment
 
-[//]: # ()
-[//]: # (**Key words: Vision-language model, Out-of-distribution detection, Open-environment recognition, Few-shot learning, Prompt learning.**)
-
-[//]: # ()
-[//]: # (## :newspaper: News)
-
-[//]: # ()
-[//]: # (- **[2025.02.20]** We release [training]&#40;scripts/localprompt/train.sh&#41; and [evaluation]&#40;scripts/localprompt/eval.sh&#41; script for LocalPrompt. Try it now! :fire:)
-
-[//]: # (- **[2025.02.15]** We release camera-ready submission on [openreview]&#40;https://openreview.net/forum?id=Ew3VifXaxZ&noteId=I6rrHj9ExE&#41;. :cake:)
-
-[//]: # (- **[2025.01.23]** **Local-Prompt** has been accepted by **ICLR 2025**! :tada:)
-
-[//]: # (- **[2024.09.07]** [Local-Prompt]&#40;https://arxiv.org/abs/2409.04796&#41; is available on Arxiv. :candy:)
-
-[//]: # ()
-[//]: # (## :sparkles: Motivation)
-
-[//]: # ()
-[//]: # (### **What is the challenging problem for out-of-distribution detection?**)
-
-[//]: # ()
-[//]: # (![overall]&#40;figures/overall.png&#41;)
-
-[//]: # ()
-[//]: # (The most challenging scene for OOD detection is that one hard OOD sample is **similar to a known class on the whole** and only **has subtle differences locally**, which naturally requires the detector to identify outliers through local outlier regions. However, existing research falls short of refining OOD task via rich local information when subtle OOD samples are exhibited in certain regions. Some methods merely focus on utilizing global features only &#40;blue boxes&#41;, which ignores local features &#40;red boxes&#41; and inevitably brings about coarse description. Others use the same prompts to match both global and local image features, so the gap between them may lead to inaccurate local outlier identification. Consequently, it is straightforward that enhancing regional information to **empower the model with local outlier knowledge could be significant to OOD detection**.)
-
-[//]: # ()
-[//]: # (## :open_book: Overview)
-
-[//]: # ()
-[//]: # (### **What do we do to overcome current problem?**)
-
-[//]: # ()
-[//]: # (![structure]&#40;figures/structure.png&#41;)
-
-[//]: # ()
-[//]: # (We introduce **Local-Prompt**, a novel coarse-to-fine tuning paradigm to emphasize regional enhancement with local prompts. Our method comprises two integral components: **global prompt guided negative augmentation** and **local prompt enhanced regional regularization**. The former utilizes frozen, coarse global prompts as guiding cues to incorporate negative augmentation, thereby leveraging local outlier knowledge. The latter employs trainable local prompts and a regional regularization to capture local information effectively, aiding in outlier identification. We also propose regional-related metric to empower the enrichment of OOD detection. )
-
-
-
-##  ✈️ Quick Start
-
-### Environment and Package 
-
-```bash
-
-# Create a conda environment
-
-conda create -n iim python=3.8
-
-
-# Activate the environment
-
-conda activate iim
-
-
-# Clone this repo
-
-git clone https://github.com/pSGAme/IIM-SMCM.git
-
-cd IIM-SMCM
-
-
-# Install necessary packages
-
-pip install -r requirements.txt
-
-```
-
-The exact environment used for every number in this repo is pinned in
-[`environment.yml`](environment.yml) (Python 3.13, torch 2.11 + CUDA 13.0,
-single RTX 5090):
+The environment used for every number in this repo is pinned in
+[`environment.yml`](environment.yml) (Python 3.13, torch 2.11 + CUDA 13.0):
 
 ```bash
 conda env create -f environment.yml
@@ -90,126 +23,102 @@ conda activate iim-smcm
 pip install -e Dassl
 ```
 
+A curated alternative is [`requirements.txt`](requirements.txt):
+
+```bash
+conda create -n iim python=3.13
+conda activate iim
+pip install -r requirements.txt
+```
 
 ### Install Dassl
 
+`Dassl` is vendored in this repository (a lightly modified fork):
+
 ```bash
-
 cd Dassl
-
 pip install -r requirements.txt
-
 python setup.py develop
-
 ```
-
 
 ### Data Preparation
 
-Please create a data folder and download the following ID and OOD datasets to the folder.
+Create a data root, for example `/data/ood`, and download the in-distribution
+(ID) and out-of-distribution (OOD) datasets there.
 
-For me, it is `/data/ood` (`DATA="/data/ood/"`)
+#### In-distribution datasets
 
+ImageNet-1K is the main ID dataset:
 
-#### In-distribution Datasets
+- create `imagenet/` under the data root and `images/` under it;
+- download the dataset from the [official website](https://image-net.org/index.php)
+  and extract the training and validation sets to `$DATA/imagenet/images`;
+- put `classnames.txt` under `imagenet/data/`. The file used here can be obtained
+  from [this link](https://drive.google.com/file/d/1-61f_ol79pViBFDG_IDlUQSwoLcn2XXF/view).
 
-We use ImageNet-1K as the ID dataset.
+The smaller ID variants used in the paper (ImageNet100, ImageNet10, ImageNet20)
+follow the same procedure; see [MCM](https://github.com/deeplearning-wisc/MCM)
+for the detailed category names.
 
-- Create a folder named `imagenet/` under `/data/ood` folder.
+#### Out-of-distribution datasets
 
-- Create `images/` under `imagenet/`.
+We use [iNaturalist](https://arxiv.org/abs/1707.06642),
+[SUN](https://vision.princeton.edu/projects/2010/SUN/),
+[Places](https://arxiv.org/abs/1610.02055) and
+[Texture](https://arxiv.org/abs/1311.3618). The subsampled versions can be
+downloaded following [this repository](https://github.com/deeplearning-wisc/large_scale_ood#out-of-distribution-dataset).
 
-- Download the dataset from the [official website](https://image-net.org/index.php) and extract the training and validation sets to `$DATA/imagenet/images`.
-
-
-Besides, we need to put `classnames.txt` under`imagenet/data` folder. This .txt file can be downloaded via https://drive.google.com/file/d/1-61f_ol79pViBFDG_IDlUQSwoLcn2XXF/view
-
-
-For more ID dataset like ImageNet100, ImageNet10 and ImageNet20 in the paper, follow the same procedure to construct 'classnames.txt' in the same format and refer to [MCM](https://github.com/deeplearning-wisc/MCM) to find detailed category names.
-
-
-#### Out-of-distribution Datasets
-
-We use the large-scale OOD datasets [iNaturalist](https://arxiv.org/abs/1707.06642), [SUN](https://vision.princeton.edu/projects/2010/SUN/), [Places](https://arxiv.org/abs/1610.02055), and [Texture](https://arxiv.org/abs/1311.3618). You can download the subsampled datasets following instructions from [this repository](https://github.com/deeplearning-wisc/large_scale_ood#out-of-distribution-dataset).
-
-
-The overall file structure of file is as follows:
+Expected layout:
 
 ```
-
-
-|--/data/ood
-
-    |-- imagenet
-
-        |-- classnames.txt
-
-        |-- train/ # contains 1,000 folders like n01440764, n01443537, etc.
-
-        |-- val/ # contains 1,000 folders like n01440764, n01443537, etc.
-
-    |-- imagenet100
-
-        |-- classnames.txt
-
-        |-- train/
-
-        |-- val/
-
-    |-- imagenet10
-
-        |-- classnames.txt
-
-        |-- train/
-
-        |-- val/
-
-    |-- imagenet20
-
-        |-- classnames.txt
-
-        |-- train/
-
-        |-- val/
-
-    |-- iNaturalist
-
-    |-- SUN
-
-    |-- Places
-
-    |-- Texture
-
-    ...
-
+$DATA/ood
+|-- imagenet
+|   |-- classnames.txt
+|   |-- train/            # 1,000 folders such as n01440764, n01443537, ...
+|   `-- val/
+|-- imagenet100
+|   |-- classnames.txt
+|   |-- train/
+|   `-- val/
+|-- imagenet10
+|   |-- classnames.txt
+|   |-- train/
+|   `-- val/
+|-- imagenet20
+|   |-- classnames.txt
+|   |-- train/
+|   `-- val/
+|-- iNaturalist
+|-- SUN
+|-- Places
+`-- Texture
 ```
-
 
 ### Training
 
-The training script is in `scripts/iim/train.sh`, you can alter the parameters in the script file.
+The training entry point is `scripts/iim/train.sh`; adjust the parameters and the
+data path inside the script, then run
 
-✴️Please specify the data path in the sh file
-
-you can simply run
-
+```bash
+sh scripts/iim/train_all.sh
 ```
-sh scripts/iim/train_all.sh 
-```
-to run all the training tasks
 
-✴️ Note: if you set ImageNet-1k as the ID dataset, you may need a GPU with memory greater than 24G. We use a H100 to run it.
+to launch every training task. The LocalPrompt and zero-shot baselines have
+their own scripts under `scripts/localprompt/` and `scripts/zero-shot/`.
 
-
+> Note: with ImageNet-1k as the ID dataset a GPU with more than 24 GB of memory
+> is required (an H100 was used for the reported runs).
 
 ### Inference
 
-The evaluation script is in `scripts/iim/eval_all.sh`, you can alter the parameters in the script file.
+The evaluation entry point is `scripts/iim/eval_all.sh`; adjust the parameters
+and the data path inside `scripts/iim/eval.sh`, then run
 
-✴️Please specify the data path in the `scripts/iim/eval.sh` file
+```bash
+sh scripts/iim/eval_all.sh
+```
 
-
-### Global-JS / Spatial-JS score post-processing
+## Global-JS / Spatial-JS score post-processing
 
 Evaluation additionally reports two **test-time** variants of every base score:
 a global patch-consensus term (`*-JS`) and a spatial-organisation term
@@ -236,48 +145,31 @@ defaults are `JS_GAMMA: 0.5`, `JS_SPATIAL_A: 0.5`, `JS_SPATIAL_GRID: 7` in
 See [`docs/js_spatial.md`](docs/js_spatial.md) for the definitions, the ID-only
 calibration rule and the ablation switches (`--js_spatial_w "1,0"` / `"0,1"`).
 
+## Repository layout
 
-[//]: # ()
-[//]: # (## :blue_book: Citation)
+```
+train.py                         IIM / LocalPrompt training
+eval_ood_detection.py            OOD evaluation (12 scores with JS post-processing)
+eval_ood_detection_zero_shot.py  zero-shot CLIP OOD evaluation
+clip_w_local/                    CLIP with local (patch) feature output
+trainers/                        IIM, LocalPrompt and ZeroShot trainers
+trainers/utils/js_spatial.py     global-JS / spatial-JS score terms
+configs/datasets/                dataset configs
+configs/trainers/                IIM / LocalPrompt / ZeroShot configs
+scripts/                         training and evaluation shell scripts
+docs/                            notes (JS/spatial definitions, experiments)
+results/                         experiment reports and result tables
+figures/                         figures used in the reports
+Dassl/                           vendored Dassl framework
+```
 
-[//]: # ()
-[//]: # (If you find this work useful, consider giving this repository a star :star: and citing :bookmark_tabs: our paper as follows:)
+## Acknowledgement
 
-[//]: # ()
-[//]: # ()
-[//]: # (```bibtex)
-
-[//]: # ()
-[//]: # (@inproceedings{zeng2025local,)
-
-[//]: # ()
-[//]: # (  title={Local-Prompt: Extensible Local Prompts for Few-Shot Out-of-Distribution Detection},)
-
-[//]: # ()
-[//]: # (  author={Zeng, Fanhu and Cheng, Zhen and Zhu, Fei and Wei, Hongxin and Zhang, Xu-Yao},)
-
-[//]: # ()
-[//]: # (  booktitle={The Thirteenth International Conference on Learning Representations},)
-
-[//]: # ()
-[//]: # (  year={2025},)
-
-[//]: # ()
-[//]: # (  url={https://openreview.net/forum?id=Ew3VifXaxZ})
-
-[//]: # ()
-[//]: # (})
-
-[//]: # ()
-[//]: # (```)
-
-## Acknowledgememnt
-
-This repo is heavily borrowed from  [CoOp](https://github.com/KaiyangZhou/CoOp), [LoCoOp](https://github.com/AtsuMiyai/LoCoOp) and [Local-Prompt](https://github.com/AuroraZengfh/Local-Prompt).
-
-Thanks for these great works and open sourcing!
-If you find them helpful, please consider citing them as well. 
+This repo is heavily borrowed from [CoOp](https://github.com/KaiyangZhou/CoOp),
+[LoCoOp](https://github.com/AtsuMiyai/LoCoOp) and
+[Local-Prompt](https://github.com/AuroraZengfh/Local-Prompt).
+Thanks for these great works and for open-sourcing them.
 
 ## Contact
 
-If you have any questions, feel free to contact [kxchen@seu.edu.cn](kxchen@seu.edu.cn).
+Questions can be raised through the issue tracker of this repository.
