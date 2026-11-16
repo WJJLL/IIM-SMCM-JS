@@ -1,5 +1,6 @@
 DATALOADER:
   TRAIN_X:
+    # BATCH_SIZE: 32
     BATCH_SIZE: 32
   TEST:
     BATCH_SIZE: 128
@@ -35,3 +36,9 @@ TRAINER:
     N_CTX: 16
     CSC: True
     CLASS_TOKEN_POSITION: end
+    # JS / spatial-JS auxiliary scores (test-time post-processing only)
+    JS_SCALE: 50.0          # softmax temperature on patch logits
+    JS_GAMMA: 0.5           # budget of the aux terms (fraction of std_ID(base))
+    JS_SPATIAL_GRID: 7      # g x g grid of the spatial JS term
+    JS_SPATIAL_A: 0.5       # share of the budget for the global JS term
+    JS_SPATIAL_W: ""        # explicit split, e.g. "1,0" / "0,1"

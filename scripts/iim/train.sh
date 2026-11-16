@@ -12,7 +12,7 @@ topk=$6 # 50
 part=$7
 num_neg=$8
 
-for SEED in 1 2 3
+for SEED in 1
 do
     DIR=output/${DATASET}/${TRAINER}/${CFG}_${SHOTS}shots/numneg${num_neg}_topk${topk}_lamda${lambda}_div${div_value}/seed${SEED}_${part}
     echo $PWD

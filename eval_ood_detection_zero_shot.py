@@ -8,8 +8,8 @@ from utils.train_eval_util import set_val_loader, set_ood_loader_ImageNet, set_m
 from utils.detection_util import get_and_print_results
 from utils.plot_util import plot_distribution
 import trainers.localprompt
-import trainers.prosimo
 import trainers.zeroshot
+# import trainers.prosimo
 # import trainers.prosimohyper
 import datasets.imagenet
 import datasets.fgvc_aircraft
@@ -57,6 +57,9 @@ def reset_cfg(cfg, args):
 
     if args.T:
         cfg.T = args.T
+
+    if args.alpha:
+        cfg.alpha = args.alpha
 
 
 def extend_cfg(cfg):
@@ -166,7 +169,7 @@ def main(args):
     auroc_list_slcm, aupr_list_slcm, fpr_list_slcm = [], [], []
 
     if cfg.DATASET.SUBSAMPLE_CLASSES != "all":
-        in_scores = trainer.test_ood_imagenet(trainer.test_loader, args.top_k, args.T)
+        in_scores = trainer.test_ood_imagenet(trainer.test_loader, args.top_k, args.T, calibrate=True)
 
         print(f"Evaluating fine-grained OOD dataset Imagenet")
         out_scores = trainer.test_ood_imagenet(trainer.val_loader, args.top_k, args.T)
@@ -178,7 +181,7 @@ def main(args):
                                   auroc_list[i], aupr_list[i], fpr_list[i])
     else:
         id_data_loader = set_val_loader(args, preprocess)
-        in_scores = trainer.test_ood(id_data_loader, args.top_k, args.T)
+        in_scores = trainer.test_ood(id_data_loader, args.top_k, args.T, calibrate=True)
 
     for out_dataset in out_datasets:
 
@@ -244,6 +247,8 @@ if __name__ == "__main__":
                         help='number of negative local prompts')
     parser.add_argument('--T', type=float, default=1,
                         help='temperature parameter')
+    parser.add_argument('--alpha', type=float, default=1.0,
+                        help='weight of the S-MCM term')
     parser.add_argument('--top_k', type=int, default=10,
                         help='top_k selection of regions')
     args = parser.parse_args()

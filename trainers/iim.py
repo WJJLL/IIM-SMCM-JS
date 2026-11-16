@@ -22,6 +22,13 @@ from functools import reduce
 from operator import mul
 import os
 from .utils.score_function import *
+from .utils import js_spatial
+from .utils.js_spatial import (
+    Patch_Agreement_Score,
+    Patch_Spatial_Std_Score,
+    calibrate_js_spatial,
+    combine_js_spatial,
+)
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
@@ -272,6 +279,15 @@ class IIM(TrainerX):
     IIM
     """
 
+    # Names of the base scores; each is reported together with a -JS and a
+    # -JS-Spatial variant (12 scores in total).
+    BASE_NAMES = ["MCM", "GL-MCM", "R-MCM", "S-MCM"]
+
+    # ID-only calibration constants for the JS / spatial-JS terms.
+    # Set by the in-distribution pass (calibrate=True) and reused for every
+    # OOD set, so no OOD information ever enters the coefficients.
+    _js_calib = None
+
     def check_cfg(self, cfg):
         assert cfg.TRAINER.IIM.PREC in ["fp16", "fp32", "amp"]
 
@@ -280,6 +296,7 @@ class IIM(TrainerX):
         classnames = self.dm.dataset.classnames
         self.top_k = cfg.topk
         self.T = cfg.T
+        self._js_calib = None
 
         print(f"Loading CLIP (backbone: {cfg.MODEL.BACKBONE.NAME})")
         clip_model = load_clip_to_cpu(cfg)
@@ -331,9 +348,10 @@ class IIM(TrainerX):
     def calculate_loss_local(self, output_local, neg_output_local, label):
 
         total_local_prompts = self.model.prompt_learner.num_local_prompts + self.model.prompt_learner.num_neg_prompts
-        label_output_local = output_local.gather(2, repeat(label, 'b -> b n 1', n=output_local.shape[1]))  # batch,196,1
 
+        label_output_local = output_local.gather(2, repeat(label, 'b -> b n 1', n=output_local.shape[1]))  # batch,196,1
         label_topk_output_local = label_output_local.topk(k=self.top_k, dim=1)[0].squeeze()  # batch, k
+
         pos_topk_ouput_local = output_local.topk(k=self.top_k, dim=1)[0]  # batch, k, 500
         neg_topk_output_local = neg_output_local.topk(k=self.top_k, dim=1)[0]  # batch, k, 300
 
@@ -363,6 +381,7 @@ class IIM(TrainerX):
         # bs, 196, 1
         label_topk_output_local_pos = label_output_local.topk(k=self.top_k * 2, dim=1)[1]
         label_topk_output_local_pos = label_topk_output_local_pos[:, self.top_k:2 * self.top_k]
+
         # bs, k, 1 # indices
         neg_topk_output_local = neg_output_local.gather(1, repeat(label_topk_output_local_pos, 'b k 1 -> b k n',
                                                                   n=self.model.prompt_learner.num_neg_prompts))
@@ -383,7 +402,26 @@ class IIM(TrainerX):
         loss_local_neg = torch.sum(torch.exp(Neg / self.T), dim=(1, 2)) / torch.sum(torch.exp(Pos / self.T), dim=(1, 2))
         loss_local_neg = -torch.mean(torch.log(loss_local_neg))
 
-        return loss_local_neg
+        return loss_local_neg        
+
+    # def calculate_negative_entropy_loss(self, output_local, target_indices=None):
+    #     """
+    #     output_local:   [B, R, C]    logits over (region x ID class)
+    #     target_indices: [B, k]      indices of the regions to constrain
+    #     """
+    #     # softmax over the response values to get a predictive distribution
+    #     probs = F.softmax(output_local, dim=-1)  # [batch, k, num_classes]
+        
+    #     # entropy: -sum(p * log(p))
+    #     epsilon = 1e-8
+    #     entropy = -torch.sum(probs * torch.log(probs + epsilon), dim=-1)  # [batch, k]
+        
+    #     # average the entropy over all regions
+    #     neg_entropy_loss = torch.mean(entropy)  # scalar
+        
+    #     return neg_entropy_loss
+
+
 
     def forward_backward(self, batch):
         image, label = self.parse_batch_train(batch)
@@ -394,8 +432,15 @@ class IIM(TrainerX):
             with autocast():
                 output_local, neg_output_local, loss_div = self.model(image)
                 loss_local = self.calculate_loss_local(output_local, neg_output_local, label)
-                loss_local_negative = self.calculate_loss_local_neg(neg_output_local, output_local, label)
-                loss = loss_local + self.lambda_value * loss_local_negative + self.div_value * loss_div
+                loss_local_negative  = self.calculate_loss_local_neg(neg_output_local, output_local, label)
+
+                # pos_topk_ouput_local = output_local.topk(k=self.top_k, dim=1)[0]  # batch, k, 500
+                # neg_entropy_loss =   self.calculate_negative_entropy_loss(
+                #     pos_topk_ouput_local
+                # )
+
+                loss = loss_local + self.lambda_value * loss_local_negative + self.div_value * loss_div 
+
 
             self.optim.zero_grad()
             self.scaler.scale(loss).backward()
@@ -417,7 +462,7 @@ class IIM(TrainerX):
         return loss_summary
 
     def parse_batch_train(self, batch):
-        input = batch["img1"]  # get only one image is enough :) :) l
+        input = batch["img"]  # get only one image is enough :) :) l
         label = batch["label"]
         input = input.to(self.device)
         label = label.to(self.device)
@@ -511,101 +556,118 @@ class IIM(TrainerX):
 
         return list(results.values())[0], np.concatenate(outputs, axis=0), list_correct
 
-    @torch.no_grad()
-    def test_ood(self, data_loader, top_k, T):
-        """Test-time OOD detection pipeline."""
-        to_np = lambda x: x.data.cpu().numpy()
+    def _base_and_aux_scores(self, output, output_local, neg_output_local, T, top_k):
+        """Return the four base scores plus the two per-image JS auxiliaries.
+
+        `*-JS`         : global patch-consensus JS (H(q) - mean_p H(pi_p))
+        `*-JS-Spatial` : global JS + spatial-organisation JS (std of the JS of
+                         g x g pooled cells), sharing one ID-only budget.
+        """
+        output = output / 100.0
+        output_local = output_local / 100.0
+        neg_output_local = neg_output_local / 100.0
+
+        alpha = self.cfg.alpha
+        lamda = alpha * 196 / self.model.prompt_learner.num_local_prompts
+
+        bases = [
+            MCM_Score(output, T),
+            R_MCM_Score(output, output_local, T, topk=1),
+            R_MCM_Score(output, output_local, T, topk=top_k,
+                        neg_output_local=neg_output_local),
+            S_MCM_Score(output, output_local, T, lamda, topk=top_k,
+                        neg_output_local=neg_output_local),
+        ]
+        js = Patch_Agreement_Score(output_local)
+        js_std = Patch_Spatial_Std_Score(output_local)
+        return bases, js, js_std
+
+    def _eval_ood_loader(self, data_loader, top_k, T, calibrate, parse_batch):
+        """Run one loader and return 12 score arrays.
+
+        Order per base score b in [MCM, GL-MCM, R-MCM, S-MCM]:
+            b, b-JS, b-JS-Spatial
+
+        With ``calibrate=True`` (the in-distribution pass) the JS coefficients
+        are fitted from ID statistics only:
+            coef   = JS_GAMMA * std_ID(base) / std_ID(js)
+            mu_js  = mean_ID(js)
+        and cached for the OOD passes, so no OOD data enters the calibration.
+        """
         concat = lambda x: np.concatenate(x, axis=0)
 
         self.set_model_mode("eval")
         self.model.eval()
         self.evaluator.reset()
 
-        mcm_score = []
-        gl_mcm_score = []
-        r_mcm_score = []
-        s_mcm_score = []
+        base_lists = [[] for _ in self.BASE_NAMES]
+        js_list, js_std_list = [], []
 
-        for batch_idx, (images, labels, *id_flag) in enumerate(tqdm(data_loader)):
-            images = images.cuda()
+        for batch in tqdm(data_loader):
+            if parse_batch:
+                images, labels = self.parse_batch_test(batch)
+            else:
+                images, labels, *id_flag = batch
+                images = images.cuda()
 
             output, output_local, neg_output_local = self.model_inference(images)
-            output /= 100.0
-            output_local /= 100.0
-            neg_output_local /= 100.0
+            bases, js, js_std = self._base_and_aux_scores(
+                output, output_local, neg_output_local, T, top_k)
 
-            # mcm
-            mcm_global_score = MCM_Score(output, T)
-            mcm_score.append(mcm_global_score)
+            for i in range(len(self.BASE_NAMES)):
+                base_lists[i].append(bases[i])
+            js_list.append(js)
+            js_std_list.append(js_std)
 
-            # gl_mcm
-            gl_mcm_local_score = R_MCM_Score(output, output_local, T, topk=1)
-            gl_mcm_score.append(gl_mcm_local_score)
+        n = len(data_loader.dataset)
+        bases_all = [concat(b)[:n].copy() for b in base_lists]
+        js_all = concat(js_list)[:n].copy()
+        js_std_all = concat(js_std_list)[:n].copy()
 
-            # r_mcm
-            r_mcm_local_score = R_MCM_Score(output, output_local, T, topk=top_k)
-            r_mcm_score.append(r_mcm_local_score)
+        if calibrate:
+            self._js_calib = []
+            mu_js = float(js_all.mean())
+            sd_js = float(np.std(js_all)) + 1e-12
+            for name, base in zip(self.BASE_NAMES, bases_all):
+                sd_base = float(np.std(base)) + 1e-12
+                coef = js_spatial.JS_GAMMA * sd_base / sd_js
+                sp = calibrate_js_spatial(base, js_all, js_std_all)
+                self._js_calib.append((coef, mu_js, sp))
+                print(f"[IIM {name}-JS] ID-only calibration: "
+                      f"mu_js={mu_js:.6f} std_js={sd_js:.6f} "
+                      f"std_base={sd_base:.6f} coef={coef:.6f} "
+                      f"coef_js(spatial)={sp[0]:.6f} "
+                      f"coef_std(spatial)={sp[2]:.6f}")
 
-            # s-mcm
-            alpha = self.cfg.alpha
-            lamda = alpha * 196 / (
-                self.model.prompt_learner.num_local_prompts)
+        if self._js_calib is None:
+            print("[IIM JS] no ID calibration available - *-JS and "
+                  "*-JS-Spatial fall back to the base scores")
+            out = []
+            for base in bases_all:
+                out.extend([base, base, base])
+            return out
 
-            s_mcm_local_score = S_MCM_Score(output, output_local, T, lamda, topk=top_k)
-            s_mcm_score.append(s_mcm_local_score)
+        out = []
+        for i, name in enumerate(self.BASE_NAMES):
+            coef, mu_js, sp = self._js_calib[i]
+            base = bases_all[i]
+            base_js = base - coef * (js_all - mu_js)
+            base_js_spatial = combine_js_spatial(base, js_all, js_std_all, sp)
+            out.extend([base, base_js, base_js_spatial])
 
-        return concat(mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(gl_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(r_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(s_mcm_score)[:len(data_loader.dataset)].copy()
+        return out
 
     @torch.no_grad()
-    def test_ood_imagenet(self, data_loader, top_k, T):
-        """Test-time OOD detection pipeline."""
-        to_np = lambda x: x.data.cpu().numpy()
-        concat = lambda x: np.concatenate(x, axis=0)
+    def test_ood(self, data_loader, top_k, T, calibrate=False):
+        """Test-time OOD detection pipeline (tuple-style batches)."""
+        return self._eval_ood_loader(data_loader, top_k, T, calibrate,
+                                     parse_batch=False)
 
-        self.set_model_mode("eval")
-        self.model.eval()
-        self.evaluator.reset()
-
-        mcm_score = []
-        gl_mcm_score = []
-        r_mcm_score = []
-        s_mcm_score = []
-
-        for batch_idx, batch in enumerate(tqdm(data_loader)):
-            images, labels = self.parse_batch_test(batch)
-            # print(batch_idx)
-            output, output_local, neg_output_local = self.model_inference(images)
-            output /= 100.0
-            output_local /= 100.0
-            neg_output_local /= 100.0
-
-            # mcm
-            mcm_global_score = MCM_Score(output, T)
-            mcm_score.append(mcm_global_score)
-
-            # gl_mcm
-            gl_mcm_local_score = R_MCM_Score(output, output_local, T, topk=1)
-            gl_mcm_score.append(gl_mcm_local_score)
-
-            # r_mcm
-            r_mcm_local_score = R_MCM_Score(output, output_local, T, topk=top_k)
-            r_mcm_score.append(r_mcm_local_score)
-
-            # s_mcm
-            alpha = self.cfg.alpha
-            lamda = alpha * 196 / (
-                self.model.prompt_learner.num_local_prompts)
-
-            s_mcm_local_score = S_MCM_Score(output, output_local, T, lamda, topk=top_k)
-            s_mcm_score.append(s_mcm_local_score)
-
-        return concat(mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(gl_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(r_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(s_mcm_score)[:len(data_loader.dataset)].copy()
+    @torch.no_grad()
+    def test_ood_imagenet(self, data_loader, top_k, T, calibrate=False):
+        """Test-time OOD detection pipeline (DASSL dict-style batches)."""
+        return self._eval_ood_loader(data_loader, top_k, T, calibrate,
+                                     parse_batch=True)
 
     @torch.no_grad()
     def test_visualize(self, image_path, label):
@@ -639,5 +701,8 @@ class IIM(TrainerX):
         return pos_index, neg_index
 
     def Info(self):
-        names = ["MCM score", "GL-MCM score", "R-MCM score", "S-MCM score"]
+        names = []
+        for name in self.BASE_NAMES:
+            names += [f"{name} score", f"{name}-JS score",
+                      f"{name}-JS-Spatial score"]
         return names

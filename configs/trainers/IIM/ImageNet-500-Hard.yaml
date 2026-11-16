@@ -35,3 +35,9 @@ TRAINER:
     N_CTX: 16
     CSC: True
     CLASS_TOKEN_POSITION: end
+    # JS / spatial-JS auxiliary scores (test-time post-processing only)
+    JS_SCALE: 50.0
+    JS_GAMMA: 0.5
+    JS_SPATIAL_GRID: 7
+    JS_SPATIAL_A: 0.5
+    JS_SPATIAL_W: ""

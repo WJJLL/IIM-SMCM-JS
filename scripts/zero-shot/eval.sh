@@ -16,7 +16,7 @@ MODEL_dir=output/${DATASET}/${TRAINER}/${part}
 
 Output_dir="${MODEL_dir}/eval"
 
-python zero_shot_eval_ood_detection.py \
+python eval_ood_detection_zero_shot.py \
 --root ${DATA} \
 --trainer ${TRAINER} \
 --dataset-config-file configs/datasets/${DATASET}.yaml \

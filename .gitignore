@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Datasets and experiment artefacts (large, machine specific)
+data/ood/
+output/
+*.pth.tar
+*.pt
+*.log
+
+# Keep the small class-list / split metadata that ships with the repo
+!data/ImageNet/
+!data/ImageNet10/
+!data/ImageNet20/
+!data/ImageNet100/

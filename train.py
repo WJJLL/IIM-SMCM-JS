@@ -8,10 +8,10 @@ from dassl.config import get_cfg_default
 from dassl.engine import build_trainer
 from utils.train_eval_util import set_val_loader
 import trainers.localprompt
-import trainers.prosimo
+# import trainers.prosimo
 # import trainers.prosimohyper
 import datasets.imagenet
-import trainers.locoop
+# import trainers.locoop
 import trainers.iim
 import os
 
@@ -66,6 +66,9 @@ def reset_cfg(cfg, args):
 
     # if args.div_value:
     cfg.div_value = args.div_value
+
+    # weight of the negative entropy regularizer (0.0 disables it)
+    cfg.neg_entropy_weight = args.neg_entropy_weight
         
     if args.topk:
         cfg.topk = args.topk
@@ -91,27 +94,26 @@ def extend_cfg(cfg):
 
     cfg.TRAINER.LOCALPROMPT = CN()
     cfg.TRAINER.LOCALPROMPT.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.LOCALPROMPT.V_CTX = 8  # number of visual prompts
-    cfg.TRAINER.LOCALPROMPT.CSC = True  # class-specific context
+    cfg.TRAINER.LOCALPROMPT.CSC = False  # class-specific context
     cfg.TRAINER.LOCALPROMPT.CTX_INIT = ""  # initialization words
     cfg.TRAINER.LOCALPROMPT.PREC = "amp"  # fp16, fp32, amp
     cfg.TRAINER.LOCALPROMPT.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
 
-    cfg.TRAINER.LoCoOp = CN()
-    cfg.TRAINER.LoCoOp.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.LoCoOp.CSC = False  # class-specific context
-    cfg.TRAINER.LoCoOp.CTX_INIT = ""  # initialization words
-    cfg.TRAINER.LoCoOp.PREC = "fp16"  # fp16, fp32, amp
-    cfg.TRAINER.LoCoOp.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # cfg.TRAINER.LoCoOp = CN()
+    # cfg.TRAINER.LoCoOp.N_CTX = 16  # number of context vectors
+    # cfg.TRAINER.LoCoOp.CSC = False  # class-specific context
+    # cfg.TRAINER.LoCoOp.CTX_INIT = ""  # initialization words
+    # cfg.TRAINER.LoCoOp.PREC = "fp16"  # fp16, fp32, amp
+    # cfg.TRAINER.LoCoOp.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
 
-    cfg.TRAINER.ProSimO = CN()
-    cfg.TRAINER.ProSimO.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.ProSimO.V_CTX = 8  # number of visual prompts
-    cfg.TRAINER.ProSimO.CSC = True  # class-specific context
-    cfg.TRAINER.ProSimO.CTX_INIT = ""  # initialization words
-    cfg.TRAINER.ProSimO.PREC = "amp"  # fp16, fp32, amp
-    cfg.TRAINER.ProSimO.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
-    cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
+    # cfg.TRAINER.ProSimO = CN()
+    # cfg.TRAINER.ProSimO.N_CTX = 16  # number of context vectors
+    # cfg.TRAINER.ProSimO.V_CTX = 8  # number of visual prompts
+    # cfg.TRAINER.ProSimO.CSC = True  # class-specific context
+    # cfg.TRAINER.ProSimO.CTX_INIT = ""  # initialization words
+    # cfg.TRAINER.ProSimO.PREC = "amp"  # fp16, fp32, amp
+    # cfg.TRAINER.ProSimO.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
 
     cfg.TRAINER.IIM = CN()
     cfg.TRAINER.IIM.N_CTX = 16  # number of context vectors
@@ -121,6 +123,14 @@ def extend_cfg(cfg):
     cfg.TRAINER.IIM.PREC = "amp"  # fp16, fp32, amp
     cfg.TRAINER.IIM.PROJ = False  # True, False
     cfg.TRAINER.IIM.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # JS / spatial-JS auxiliaries are *test-time only* (post-processing on the
+    # score, no effect on training).  Declared here so the IIM yaml files load
+    # unchanged for both train.py and eval_ood_detection.py.
+    cfg.TRAINER.IIM.JS_SCALE = 50.0
+    cfg.TRAINER.IIM.JS_GAMMA = 0.5
+    cfg.TRAINER.IIM.JS_SPATIAL_GRID = 7
+    cfg.TRAINER.IIM.JS_SPATIAL_A = 0.5
+    cfg.TRAINER.IIM.JS_SPATIAL_W = ""
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
 
 
@@ -154,6 +164,7 @@ def main(args):
         print("Setting fixed seed: {}".format(cfg.SEED))
         set_random_seed(cfg.SEED)
     setup_logger(cfg.OUTPUT_DIR)
+
 
     if torch.cuda.is_available() and cfg.USE_CUDA:
         torch.backends.cudnn.benchmark = False
@@ -215,14 +226,16 @@ if __name__ == "__main__":
 
     parser.add_argument('--num_neg_prompts', type=int, default=300,
                         help='number of negative local prompts')
-    parser.add_argument('--num_pos', type=int, default=5,
-                        help='number of positive samples, 5 by default')
+    parser.add_argument('--num_pos', type=int, default=8,
+                        help='number of positive samples, 8 by default')
     parser.add_argument('--num_neg', type=int, default=1,
                         help='number of negative samples, 8 by default')
     parser.add_argument('--lambda_value', type=float, default=5,
                         help='weight for negative ')
     parser.add_argument('--div_value', type=float, default=0.5,
                         help='weight for diversity loss')
+    parser.add_argument('--neg_entropy_weight', type=float, default=0.0,
+                        help='weight for the negative entropy regularizer, 0 disables it')
     parser.add_argument('--topk', type=int, default=20,
                         help='topk for extracted OOD regions')
     parser.add_argument('--alpha', type=int, default=1.0,

@@ -40,7 +40,7 @@ def load_image(img_path, crop_size=None):
         image = image.resize((crop_size, crop_size))
         # width, height = image.size
         
-        # # 计算裁剪区域的左上角和右下角的坐标
+        # # coordinates of the top-left and bottom-right corners of the cropped region
         # left = (width - crop_size) / 2
         # top = (height - crop_size) / 2
         # right = (width + crop_size) / 2

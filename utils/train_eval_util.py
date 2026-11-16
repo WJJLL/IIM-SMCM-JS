@@ -53,7 +53,7 @@ def set_val_loader(args, preprocess=None):
     kwargs = {'num_workers': 2, 'pin_memory': True}
     if args.in_dataset == "imagenet":
         val_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(os.path.join(args.root, 'imagenet/val'), transform=preprocess),
+            datasets.ImageFolder(os.path.join(args.root, 'imagenet/images/val'), transform=preprocess),
             batch_size=args.batch_size, shuffle=False, **kwargs)
         # 50000 print(len(datasets.ImageFolder(os.path.join(args.root, 'imagenet/val'), transform=preprocess)))
         # 128 print(args.batch_size)

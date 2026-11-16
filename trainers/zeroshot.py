@@ -21,6 +21,13 @@ from functools import reduce
 from operator import mul
 import os
 from .utils.score_function import *
+from .utils.js_spatial import (
+    Patch_Agreement_Score,
+    Patch_Spatial_Std_Score,
+    calibrate_js_spatial,
+    combine_js_spatial,
+    JS_GAMMA,
+)
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
@@ -77,6 +84,8 @@ class PromptLearner(nn.Module):
         assert cfg_imsize == clip_imsize, f"cfg_imsize ({cfg_imsize}) must equal to clip_imsize ({clip_imsize})"
         # (classnames)
         classnames = [name.replace("_", " ") for name in classnames]
+        # used by S-MCM: number of local prompts equals the number of classes
+        self.num_local_prompts = len(classnames)
 
         global_prompts = ["a photo of a" + " " + name + "" for name in classnames]
         global_tokenized_prompts = torch.cat([clip.tokenize(p).cuda() for p in global_prompts])
@@ -158,6 +167,9 @@ class ZeroShot(TrainerX):
         print("Building custom CLIP")
         self.model = CustomCLIP(cfg, classnames, clip_model)
         self.model.to(self.device)
+        # JS / spatial-JS calibration constants (ID statistics), filled on the
+        # first (in-distribution) evaluation pass.
+        self._zs_calib = None
 
         device_count = torch.cuda.device_count()
         if device_count > 1:
@@ -238,120 +250,100 @@ class ZeroShot(TrainerX):
 
         return list(results.values())[0], np.concatenate(outputs, axis=0), list_correct
 
-    @torch.no_grad()
-    def test_ood(self, data_loader, top_k, T):
-        """Test-time OOD detection pipeline."""
-        to_np = lambda x: x.data.cpu().numpy()
+    # Names of the base scores; each is reported together with a -JS and a
+    # -JS-Spatial variant (12 scores in total).
+    BASE_NAMES = ["MCM", "GL-MCM", "R-MCM", "S-MCM"]
+
+    def _base_and_aux_scores(self, output, output_local, T, top_k):
+        """Return four base scores plus the per-image JS auxiliary scores."""
+        output = output / 100.0
+        output_local = output_local / 100.0
+
+        alpha = self.cfg.alpha
+        lamda = alpha * 196 / self.model.prompt_learner.num_local_prompts
+
+        bases = [
+            MCM_Score(output, T),
+            R_MCM_Score(output, output_local, T, topk=1),
+            R_MCM_Score(output, output_local, T, topk=top_k),
+            S_MCM_Score(output, output_local, T, lamda, topk=top_k),
+        ]
+        js = Patch_Agreement_Score(output_local)
+        js_std = Patch_Spatial_Std_Score(output_local)
+        return bases, js, js_std
+
+    def _eval_ood_loader(self, data_loader, top_k, T, calibrate, parse_batch):
+        """Run one loader and return 12 score arrays.
+
+        Order per base score b in [MCM, GL-MCM, R-MCM, S-MCM]:
+            b, b-JS, b-JS-Spatial
+        The JS coefficients are calibrated on the in-distribution pass
+        (calibrate=True) using ID statistics only, then reused for OOD sets.
+        """
         concat = lambda x: np.concatenate(x, axis=0)
 
         self.set_model_mode("eval")
         self.model.eval()
         self.evaluator.reset()
 
-        mcm_score = []
-        gl_mcm_score = []
-        r_mcm_score = []
-        s_mcm_score = []
+        base_lists = [[] for _ in range(len(self.BASE_NAMES))]
+        js_list, js_std_list = [], []
 
-        for batch_idx, (images, labels, *id_flag) in enumerate(tqdm(data_loader)):
-            images = images.cuda()
+        for batch in tqdm(data_loader):
+            if parse_batch:
+                images, labels = self.parse_batch_test(batch)
+            else:
+                images, labels, *id_flag = batch
+                images = images.cuda()
 
             output, output_local = self.model_inference(images)
-            output /= 100.0
-            output_local /= 100.0
+            bases, js, js_std = self._base_and_aux_scores(output, output_local, T, top_k)
 
-            mcm_global_score = MCM_Score(output, T)
-            mcm_score.append(mcm_global_score)
+            for i in range(len(self.BASE_NAMES)):
+                base_lists[i].append(bases[i])
+            js_list.append(js)
+            js_std_list.append(js_std)
 
-            # gl-mcm
-            N, C = output_local.shape[1:]
-            S1 = torch.sum(torch.exp(output_local / T), dim=-1, keepdim=True)
-            smax_local = torch.topk((torch.exp(output_local / T) / (S1)).reshape(-1, N * C), k=1, dim=-1)[0]
-            gl_mcm_local_score = -to_np(torch.mean(smax_local, dim=1))
-            gl_mcm_score.append(mcm_global_score + gl_mcm_local_score)
+        n = len(data_loader.dataset)
+        bases_all = [concat(b)[:n].copy() for b in base_lists]
+        js_all = concat(js_list)[:n].copy()
+        js_std_all = concat(js_std_list)[:n].copy()
 
-            # r-mcm
-            N, C = output_local.shape[1:]
-            S1 = torch.sum(torch.exp(output_local / T), dim=-1, keepdim=True)
-            smax_local = torch.topk((torch.exp(output_local / T) / (S1)).reshape(-1, N * C), k=top_k, dim=-1)[0]
-            r_mcm_local_score = -to_np(torch.mean(smax_local, dim=1))
-            r_mcm_score.append(mcm_global_score + r_mcm_local_score)
+        if calibrate or self._zs_calib is None:
+            calib = []
+            sd_js = float(np.std(js_all)) + 1e-12
+            mu_js = float(np.mean(js_all))
+            for i, name in enumerate(self.BASE_NAMES):
+                sd_base = float(np.std(bases_all[i])) + 1e-12
+                coef = JS_GAMMA * sd_base / sd_js
+                sp = calibrate_js_spatial(bases_all[i], js_all, js_std_all)
+                calib.append((coef, mu_js, sp))
+                print(f"[ZERO-SHOT {name}-JS] ID calib: mu_js={mu_js:.6f} "
+                      f"coef={coef:.6f} std_base={sd_base:.6f}")
+            self._zs_calib = calib
 
-            # glcm
-            output_local_t = output_local.permute(0, 2, 1)
-            N, C = output_local_t.shape[1:]
-            S1 = torch.sum(torch.exp(output_local_t / T), dim=-1, keepdim=True)
-            smax_local_t = torch.topk((torch.exp(output_local_t / T) / S1).reshape(-1, N * C), k=top_k, dim=-1)[0]
-            mcm_local_score_t = -to_np(torch.mean(smax_local_t, dim=1))
-            alpha = self.cfg.alpha
-            lamda = alpha * 196 / (
-                self.model.prompt_learner.num_local_prompts)
+        out = []
+        for i, name in enumerate(self.BASE_NAMES):
+            coef, mu_js, sp = self._zs_calib[i]
+            base = bases_all[i]
+            base_js = base - coef * (js_all - mu_js)
+            base_js_spatial = combine_js_spatial(base, js_all, js_std_all, sp)
+            out.extend([base, base_js, base_js_spatial])
 
-            s_mcm_score.append(mcm_global_score + 1.0 * gl_mcm_local_score + lamda * mcm_local_score_t)
-
-        return concat(mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(gl_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(r_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(s_mcm_score)[:len(data_loader.dataset)].copy()
+        return out
 
     @torch.no_grad()
-    def test_ood_imagenet(self, data_loader, top_k, T):
-        """Test-time OOD detection pipeline."""
-        to_np = lambda x: x.data.cpu().numpy()
-        concat = lambda x: np.concatenate(x, axis=0)
+    def test_ood(self, data_loader, top_k, T, calibrate=False):
+        """Test-time OOD detection pipeline (tuple-style batches)."""
+        return self._eval_ood_loader(data_loader, top_k, T, calibrate, parse_batch=False)
 
-        self.set_model_mode("eval")
-        self.model.eval()
-        self.evaluator.reset()
-
-        mcm_score = []
-        gl_mcm_score = []
-        r_mcm_score = []
-        s_mcm_score = []
-
-        for batch_idx, batch in enumerate(tqdm(data_loader)):
-            images, labels = self.parse_batch_test(batch)
-
-            output, output_local = self.model_inference(images)
-            output /= 100.0
-            output_local /= 100.0
-
-            smax_global = to_np(F.softmax(output / T, dim=-1))
-            mcm_global_score = -np.max(smax_global, axis=1)
-            mcm_score.append(mcm_global_score)
-
-            # gl-mcm
-            N, C = output_local.shape[1:]
-            S1 = torch.sum(torch.exp(output_local / T), dim=-1, keepdim=True)
-            smax_local = torch.topk((torch.exp(output_local / T) / S1).reshape(-1, N * C), k=1, dim=-1)[0]
-            gl_mcm_local_score = -to_np(torch.mean(smax_local, dim=1))
-            gl_mcm_score.append(mcm_global_score + gl_mcm_local_score)
-
-            # r-mcm
-            N, C = output_local.shape[1:]
-            S1 = torch.sum(torch.exp(output_local / T), dim=-1, keepdim=True)
-            smax_local = torch.topk((torch.exp(output_local / T) / S1).reshape(-1, N * C), k=top_k, dim=-1)[0]
-            r_mcm_local_score = -to_np(torch.mean(smax_local, dim=1))
-            r_mcm_score.append(mcm_global_score + r_mcm_local_score)
-
-            # s-mcm
-            output_local_t = output_local.permute(0, 2, 1)
-            N, C = output_local_t.shape[1:]
-            S1 = torch.sum(torch.exp(output_local_t / T), dim=-1, keepdim=True)
-            smax_local_t = torch.topk((torch.exp(output_local_t / T) / S1).reshape(-1, N * C), k=top_k, dim=-1)[0]
-            mcm_local_score_t = -to_np(torch.mean(smax_local_t, dim=1))
-
-            alpha = self.cfg.alpha
-            lamda = alpha * 196 / (
-                self.model.prompt_learner.num_local_prompts)
-
-            s_mcm_score.append(mcm_global_score + 1.0 * gl_mcm_local_score + lamda * mcm_local_score_t)
-
-        return concat(mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(gl_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(r_mcm_score)[:len(data_loader.dataset)].copy(), \
-               concat(s_mcm_score)[:len(data_loader.dataset)].copy()
+    @torch.no_grad()
+    def test_ood_imagenet(self, data_loader, top_k, T, calibrate=False):
+        """Test-time OOD detection pipeline (DASSL dict-style batches)."""
+        return self._eval_ood_loader(data_loader, top_k, T, calibrate, parse_batch=True)
 
     def Info(self):
-        names = ["MCM score", "GL-MCM score", "R-MCM score", "S-MCM score"]
+        names = []
+        for name in self.BASE_NAMES:
+            names += [f"{name} score", f"{name}-JS score", f"{name}-JS-Spatial score"]
         return names

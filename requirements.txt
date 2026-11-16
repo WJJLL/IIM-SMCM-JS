@@ -1,4 +1,27 @@
-einops
-tqdm
-matplotlib
-numpy
+# Minimal runtime requirements (curated).  For the exact, fully pinned
+# environment used for the reported results see environment.yml.
+#
+# CUDA 13.0 wheels; for another CUDA version reinstall torch/torchvision with
+#   pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu126
+--extra-index-url https://download.pytorch.org/whl/cu130
+
+torch==2.11.0+cu130
+torchvision==0.26.0+cu130
+numpy==2.4.3
+einops==0.8.2
+tqdm==4.67.3
+matplotlib==3.11.1
+scikit-learn==1.8.0
+scipy==1.17.1
+pandas==3.0.2
+seaborn==0.13.2
+yacs==0.1.8
+ftfy==6.3.1
+regex==2026.3.32
+Pillow==12.1.1
+opencv-python==4.13.0.92
+gdown==5.2.1
+tb-nightly==2.21.0a20251023
+
+# The vendored Dassl fork is not on PyPI:
+#   pip install -e Dassl

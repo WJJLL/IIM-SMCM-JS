@@ -10,9 +10,10 @@ from utils.train_eval_util import set_val_loader, set_ood_loader_ImageNet
 from utils.detection_util import get_and_print_results
 from utils.plot_util import plot_distribution
 import trainers.localprompt
-import trainers.prosimo
+# import trainers.prosimo
 import trainers.iim
-import trainers.locoop  # import trainers.prosimohyper
+from trainers.utils import js_spatial
+# import trainers.locoop  # import trainers.prosimohyper
 import datasets.imagenet
 import os
 
@@ -65,6 +66,18 @@ def reset_cfg(cfg, args):
     if args.alpha:
         cfg.alpha = args.alpha
 
+    # JS / spatial-JS auxiliary scores (see trainers/utils/js_spatial.py)
+    if args.js_scale is not None:
+        cfg.TRAINER.IIM.JS_SCALE = args.js_scale
+    if args.js_gamma is not None:
+        cfg.TRAINER.IIM.JS_GAMMA = args.js_gamma
+    if args.js_spatial_grid is not None:
+        cfg.TRAINER.IIM.JS_SPATIAL_GRID = args.js_spatial_grid
+    if args.js_spatial_a is not None:
+        cfg.TRAINER.IIM.JS_SPATIAL_A = args.js_spatial_a
+    if args.js_spatial_w is not None:
+        cfg.TRAINER.IIM.JS_SPATIAL_W = args.js_spatial_w
+
 
 def extend_cfg(cfg):
     """
@@ -87,20 +100,20 @@ def extend_cfg(cfg):
     cfg.TRAINER.LOCALPROMPT.PREC = "amp"  # fp16, fp32, amp
     cfg.TRAINER.LOCALPROMPT.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
 
-    cfg.TRAINER.LoCoOp = CN()
-    cfg.TRAINER.LoCoOp.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.LoCoOp.CSC = False  # class-specific context
-    cfg.TRAINER.LoCoOp.CTX_INIT = ""  # initialization words
-    cfg.TRAINER.LoCoOp.PREC = "fp16"  # fp16, fp32, amp
-    cfg.TRAINER.LoCoOp.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # cfg.TRAINER.LoCoOp = CN()
+    # cfg.TRAINER.LoCoOp.N_CTX = 16  # number of context vectors
+    # cfg.TRAINER.LoCoOp.CSC = False  # class-specific context
+    # cfg.TRAINER.LoCoOp.CTX_INIT = ""  # initialization words
+    # cfg.TRAINER.LoCoOp.PREC = "fp16"  # fp16, fp32, amp
+    # cfg.TRAINER.LoCoOp.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
 
-    cfg.TRAINER.ProSimO = CN()
-    cfg.TRAINER.ProSimO.N_CTX = 16  # number of context vectors
-    cfg.TRAINER.ProSimO.V_CTX = 8  # number of context vectors
-    cfg.TRAINER.ProSimO.CSC = False  # class-specific context
-    cfg.TRAINER.ProSimO.CTX_INIT = ""  # initialization words
-    cfg.TRAINER.ProSimO.PREC = "amp"  # fp16, fp32, amp
-    cfg.TRAINER.ProSimO.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # cfg.TRAINER.ProSimO = CN()
+    # cfg.TRAINER.ProSimO.N_CTX = 16  # number of context vectors
+    # cfg.TRAINER.ProSimO.V_CTX = 8  # number of context vectors
+    # cfg.TRAINER.ProSimO.CSC = False  # class-specific context
+    # cfg.TRAINER.ProSimO.CTX_INIT = ""  # initialization words
+    # cfg.TRAINER.ProSimO.PREC = "amp"  # fp16, fp32, amp
+    # cfg.TRAINER.ProSimO.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
 
     cfg.TRAINER.IIM = CN()
     cfg.TRAINER.IIM.N_CTX = 16  # number of context vectors
@@ -110,6 +123,16 @@ def extend_cfg(cfg):
     cfg.TRAINER.IIM.PREC = "amp"  # fp16, fp32, amp
     cfg.TRAINER.IIM.PROJ = False
     cfg.TRAINER.IIM.CLASS_TOKEN_POSITION = "end"  # 'middle' or 'end' or 'front'
+    # JS / spatial-JS auxiliaries (test-time post-processing only: they never
+    # touch training).  JS_SCALE is the softmax temperature on patch logits,
+    # JS_GAMMA the ID-only budget of the auxiliary terms (fraction of
+    # std_ID(base)), JS_SPATIAL_GRID the g x g grid of the spatial term and
+    # JS_SPATIAL_A the global share of that budget.
+    cfg.TRAINER.IIM.JS_SCALE = 50.0
+    cfg.TRAINER.IIM.JS_GAMMA = 0.5
+    cfg.TRAINER.IIM.JS_SPATIAL_GRID = 7
+    cfg.TRAINER.IIM.JS_SPATIAL_A = 0.5
+    cfg.TRAINER.IIM.JS_SPATIAL_W = ""  # e.g. "1,0" (global only), "0,1" (spatial only)
     cfg.DATASET.SUBSAMPLE_CLASSES = "all"  # all, base or new
 
     cfg.TRAINER.ProSimOHyper = CN()
@@ -149,6 +172,14 @@ def setup_cfg(args):
 def main(args):
     import clip_w_local
     cfg = setup_cfg(args)
+
+    # Push the JS / spatial-JS knobs from the config into the scoring helpers.
+    js_spatial.configure(scale=cfg.TRAINER.IIM.JS_SCALE,
+                         gamma=cfg.TRAINER.IIM.JS_GAMMA,
+                         grid=cfg.TRAINER.IIM.JS_SPATIAL_GRID,
+                         a=cfg.TRAINER.IIM.JS_SPATIAL_A,
+                         w=cfg.TRAINER.IIM.JS_SPATIAL_W)
+
     _, preprocess = clip_w_local.load(cfg.MODEL.BACKBONE.NAME)
 
     if cfg.SEED >= 0:
@@ -165,6 +196,7 @@ def main(args):
 
     if args.in_dataset in ['imagenet', 'imagenet100']:
         out_datasets = ['iNaturalist', 'SUN', 'places365', 'Texture']
+        # out_datasets = ['iNaturalist', 'SUN', 'places365']
     elif args.in_dataset in ['imagenet10']:
         out_datasets = ['imagenet20']
     elif args.in_dataset in ['imagenet20']:
@@ -191,14 +223,22 @@ def main(args):
     fpr_list = [[] for _ in range(num_score)]
 
     if args.in_dataset == "imagenet":
-        in_scores = trainer.test_ood_imagenet(trainer.test_loader, args.top_k, args.T)
+        in_scores = trainer.test_ood_imagenet(trainer.test_loader, args.top_k,
+                                              args.T, calibrate=True)
     else:
-        in_scores = trainer.test_ood(id_data_loader, args.top_k, args.T)
+        # The ID pass also calibrates the JS / spatial-JS coefficients; every
+        # OOD pass below reuses them, so no OOD information enters them.
+        in_scores = trainer.test_ood(id_data_loader, args.top_k, args.T,
+                                     calibrate=True)
 
     for out_dataset in out_datasets:
 
         print(f"Evaluating OOD dataset {out_dataset}")
-        ood_loader = set_ood_loader_ImageNet(args, out_dataset, preprocess)
+        try:
+            ood_loader = set_ood_loader_ImageNet(args, out_dataset, preprocess)
+        except FileNotFoundError as error:
+            print(f"Skipping unavailable OOD dataset {out_dataset}: {error}")
+            continue
 
         out_scores = trainer.test_ood(ood_loader, args.top_k, args.T)
 
@@ -267,6 +307,16 @@ if __name__ == "__main__":
                         help='topk for extracted OOD regions')
     parser.add_argument('--lambda_value', type=float, default=5,
                         help='weight for negative')
+    parser.add_argument('--js_scale', type=float, default=None,
+                        help='softmax temperature applied to patch logits in the JS terms')
+    parser.add_argument('--js_gamma', type=float, default=None,
+                        help='ID-only budget of the JS/spatial terms (fraction of std_ID(base))')
+    parser.add_argument('--js_spatial_grid', type=int, default=None,
+                        help='g for the g x g grid of the spatial JS term')
+    parser.add_argument('--js_spatial_a', type=float, default=None,
+                        help='share of the budget given to the global JS term')
+    parser.add_argument('--js_spatial_w', type=str, default=None,
+                        help='explicit split of the budget, e.g. "1,0" or "0,1"')
 
     args = parser.parse_args()
     main(args)

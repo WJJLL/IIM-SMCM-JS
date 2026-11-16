@@ -80,6 +80,16 @@ pip install -r requirements.txt
 
 ```
 
+The exact environment used for every number in this repo is pinned in
+[`environment.yml`](environment.yml) (Python 3.13, torch 2.11 + CUDA 13.0,
+single RTX 5090):
+
+```bash
+conda env create -f environment.yml
+conda activate iim-smcm
+pip install -e Dassl
+```
+
 
 ### Install Dassl
 
@@ -197,6 +207,34 @@ to run all the training tasks
 The evaluation script is in `scripts/iim/eval_all.sh`, you can alter the parameters in the script file.
 
 ✴️Please specify the data path in the `scripts/iim/eval.sh` file
+
+
+### Global-JS / Spatial-JS score post-processing
+
+Evaluation additionally reports two **test-time** variants of every base score:
+a global patch-consensus term (`*-JS`) and a spatial-organisation term
+(`*-JS-Spatial`). `Info()` therefore returns 12 scores:
+
+```
+MCM / GL-MCM / R-MCM / S-MCM  x  {base, -JS, -JS-Spatial}
+```
+
+$$
+S = b - \gamma\Big[\alpha\,\widehat{JS_g} + (1-\alpha)\,\widehat{JS_s}\Big],
+\qquad \gamma = 0.5,\ \alpha = 0.5,\ g = 7
+$$
+
+where $\widehat{\cdot}$ standardises with **ID-set** mean/std only, so the
+defaults are `JS_GAMMA: 0.5`, `JS_SPATIAL_A: 0.5`, `JS_SPATIAL_GRID: 7` in
+`configs/trainers/IIM/*.yaml`.
+
+> ⚠️ This is pure post-processing on the score: no retraining, no weight
+> change, no change to the training loss or the data pipeline. Only the numbers
+> written during evaluation change; `train.py` is identical to the plain IIM
+> baseline.
+
+See [`docs/js_spatial.md`](docs/js_spatial.md) for the definitions, the ID-only
+calibration rule and the ablation switches (`--js_spatial_w "1,0"` / `"0,1"`).
 
 
 [//]: # ()
