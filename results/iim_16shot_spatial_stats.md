@@ -1,10 +1,10 @@
-# Global JS 在 ID / OOD 上的分布（16-shot，seeds=[1, 2, 3]）
+# Distribution of Global JS on ID / OOD (16-shot, seeds=[1, 2, 3])
 
-JS 越大越像 ID。分布统计为**逐 seed 算后取 seed 均值±样本标准差**；`n` 是**单个 ckpt** 的样本数（与图中箱体一致）。FPR95/AUROC 为**仅用 JS 一个特征**的检测性能（每个 OOD 集单独算）。
+Larger JS means more ID-like. Distribution statistics are **computed per seed and then reported as seed mean±sample std**; `n` is the number of samples in a **single ckpt** (identical to the boxes in the figure). FPR95/AUROC are the detection performance of **the JS feature alone** (computed for each OOD dataset separately).
 
 ## ImageNet-500-Hard
 
-| 集合 | n | mean | median | IQR | JS 单特征 FPR95 | JS 单特征 AUROC |
+| set | n | mean | median | IQR | JS-only FPR95 | JS-only AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.1705±0.0011 | 0.1696±0.0012 | 0.0386 | — | — |
 | iNat | 10000 | 0.1215±0.0027 | 0.1197±0.0029 | 0.0272 | 40.68±4.80 | 91.81±0.99 |
@@ -12,11 +12,11 @@ JS 越大越像 ID。分布统计为**逐 seed 算后取 seed 均值±样本标�
 | Places | 10000 | 0.1468±0.0006 | 0.1448±0.0008 | 0.0354 | 79.32±0.96 | 73.15±0.99 |
 | Texture | 5640 | 0.1233±0.0004 | 0.1182±0.0007 | 0.0332 | 39.60±1.45 | 88.44±0.37 |
 
-- ID 中位数 − OOD 中位数：iNat -0.0499，SUN -0.0284，Places -0.0248，Texture -0.0514
+- ID median − OOD median: iNat -0.0499, SUN -0.0284, Places -0.0248, Texture -0.0514
 
 ## ImageNet-500-Easy
 
-| 集合 | n | mean | median | IQR | JS 单特征 FPR95 | JS 单特征 AUROC |
+| set | n | mean | median | IQR | JS-only FPR95 | JS-only AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.1672±0.0010 | 0.1666±0.0012 | 0.0343 | — | — |
 | iNat | 10000 | 0.1184±0.0011 | 0.1167±0.0011 | 0.0258 | 32.25±1.79 | 93.41±0.64 |
@@ -24,11 +24,11 @@ JS 越大越像 ID。分布统计为**逐 seed 算后取 seed 均值±样本标�
 | Places | 10000 | 0.1367±0.0011 | 0.1346±0.0013 | 0.0323 | 64.76±2.21 | 80.87±1.04 |
 | Texture | 5640 | 0.1168±0.0006 | 0.1126±0.0005 | 0.0290 | 28.13±1.10 | 91.86±0.38 |
 
-- ID 中位数 − OOD 中位数：iNat -0.0499，SUN -0.0373，Places -0.0321，Texture -0.0540
+- ID median − OOD median: iNat -0.0499, SUN -0.0373, Places -0.0321, Texture -0.0540
 
 ## ImageNet-100
 
-| 集合 | n | mean | median | IQR | JS 单特征 FPR95 | JS 单特征 AUROC |
+| set | n | mean | median | IQR | JS-only FPR95 | JS-only AUROC |
 |---|---|---|---|---|---|---|
 | ID | 5000 | 0.1921±0.0014 | 0.1909±0.0014 | 0.0413 | — | — |
 | iNat | 10000 | 0.1343±0.0028 | 0.1328±0.0026 | 0.0256 | 30.24±4.71 | 94.60±1.03 |
@@ -36,11 +36,11 @@ JS 越大越像 ID。分布统计为**逐 seed 算后取 seed 均值±样本标�
 | Places | 10000 | 0.1545±0.0024 | 0.1525±0.0023 | 0.0332 | 65.24±1.92 | 82.89±1.14 |
 | Texture | 5640 | 0.1388±0.0011 | 0.1356±0.0009 | 0.0296 | 36.53±2.62 | 91.40±0.47 |
 
-- ID 中位数 − OOD 中位数：iNat -0.0581，SUN -0.0417，Places -0.0384，Texture -0.0553
+- ID median − OOD median: iNat -0.0581, SUN -0.0417, Places -0.0384, Texture -0.0553
 
 ## ImageNet-1k
 
-| 集合 | n | mean | median | IQR | JS 单特征 FPR95 | JS 单特征 AUROC |
+| set | n | mean | median | IQR | JS-only FPR95 | JS-only AUROC |
 |---|---|---|---|---|---|---|
 | ID | 50000 | 0.1668±0.0011 | 0.1663±0.0012 | 0.0365 | — | — |
 | iNat | 10000 | 0.1184±0.0020 | 0.1165±0.0020 | 0.0277 | 37.82±3.02 | 92.00±0.61 |
@@ -48,5 +48,5 @@ JS 越大越像 ID。分布统计为**逐 seed 算后取 seed 均值±样本标�
 | Places | 10000 | 0.1436±0.0004 | 0.1417±0.0002 | 0.0348 | 78.13±0.39 | 73.58±0.68 |
 | Texture | 5640 | 0.1200±0.0010 | 0.1149±0.0014 | 0.0341 | 37.99±1.40 | 88.46±0.09 |
 
-- ID 中位数 − OOD 中位数：iNat -0.0498，SUN -0.0287，Places -0.0245，Texture -0.0513
+- ID median − OOD median: iNat -0.0498, SUN -0.0287, Places -0.0245, Texture -0.0513
 

@@ -1,8 +1,8 @@
-# Patch 级预测可视化统计
+# Patch-level prediction visualisation statistics
 
-checkpoint: hard 4-shot seed1，`JS_SCALE=50.0`，$G=7$
+checkpoint: hard 4-shot seed1, `JS_SCALE=50.0`, $G=7$
 
-| 来源 | JS 分位 | index | Global JS | Spatial | Top-1 不同类数 | 最大类占比 |
+| source | JS quantile | index | Global JS | Spatial | number of distinct Top-1 classes | max class share |
 |---|---|---|---|---|---|---|
 | ID | high | 10639 | 1.671 | 0.1805 | 86 | 12.8% |
 | ID | median | 1849 | 1.427 | 0.1950 | 62 | 12.8% |

@@ -1,28 +1,28 @@
-# Spatial 项的网格粒度 G 消融
+# Grid-granularity G ablation of the Spatial term
 
-S-MCM-JS-Spatial，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集；γ=0.5，α_sp=0.5（JS 与 Spatial 各半）。
+S-MCM-JS-Spatial, ImageNet-500-Hard as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets; γ=0.5, α_sp=0.5 (JS and Spatial each take half).
 
-Spatial_G(x) = std_{u=1}^{G²}[ JS^(u) ]，G=14 时每 cell 恰为 1 个 patch，G=1 退化（std=0）。
+Spatial_G(x) = std_{u=1}^{G²}[ JS^(u) ]; at G=14 each cell holds exactly 1 patch, and G=1 degenerates (std=0).
 
-## 单特征 AUROC（Spatial_G 单独作分数）
+## Single-feature AUROC (Spatial_G used alone as the score)
 
-| G | 每 cell patch 数 | 4-OOD 平均 | iNaturalist | SUN | places365 | Texture |
+| G | patches per cell | 4-OOD mean | iNaturalist | SUN | places365 | Texture |
 |---|---|---|---|---|---|---|
-| 2 | 7（均匀） | **61.55** | 71.38 | 51.69 | 49.42 | 73.71 |
-| 3 | 不均匀（adaptive 池化） | **68.63** | 80.64 | 56.51 | 52.14 | 85.22 |
-| 4 | 不均匀（adaptive 池化） | **72.52** | 84.10 | 61.80 | 58.03 | 86.13 |
-| 5 | 不均匀（adaptive 池化） | **76.55** | 86.42 | 66.92 | 62.31 | 90.53 |
-| 6 | 不均匀（adaptive 池化） | **77.21** | 88.27 | 68.06 | 64.33 | 88.21 |
-| 7 | 2（均匀） | **80.66** | 90.72 | 73.88 | 70.54 | 87.51 |
-| 8 | 不均匀（adaptive 池化） | **83.39** | 90.99 | 77.72 | 74.08 | 90.79 |
-| 10 | 不均匀（adaptive 池化） | **84.46** | 92.39 | 79.18 | 75.71 | 90.56 |
-| 14 | 1（均匀） | **50.00** | 50.00 | 50.00 | 50.00 | 50.00 |
+| 2 | 7 (uniform) | **61.55** | 71.38 | 51.69 | 49.42 | 73.71 |
+| 3 | unequal (adaptive pooling) | **68.63** | 80.64 | 56.51 | 52.14 | 85.22 |
+| 4 | unequal (adaptive pooling) | **72.52** | 84.10 | 61.80 | 58.03 | 86.13 |
+| 5 | unequal (adaptive pooling) | **76.55** | 86.42 | 66.92 | 62.31 | 90.53 |
+| 6 | unequal (adaptive pooling) | **77.21** | 88.27 | 68.06 | 64.33 | 88.21 |
+| 7 | 2 (uniform) | **80.66** | 90.72 | 73.88 | 70.54 | 87.51 |
+| 8 | unequal (adaptive pooling) | **83.39** | 90.99 | 77.72 | 74.08 | 90.79 |
+| 10 | unequal (adaptive pooling) | **84.46** | 92.39 | 79.18 | 75.71 | 90.56 |
+| 14 | 1 (uniform) | **50.00** | 50.00 | 50.00 | 50.00 | 50.00 |
 
-## 主结果（γ=0.5, α_sp=0.5）
+## Main results (γ=0.5, α_sp=0.5)
 
 | G | FPR95 | AUROC | ΔFPR95 | iNaturalist | SUN | places365 | Texture |
 |---|---|---|---|---|---|---|---|
-| 基线 S-MCM | 29.28±1.48 | 93.33±0.20 | — | — | — | — | — |
+| baseline S-MCM | 29.28±1.48 | 93.33±0.20 | — | — | — | — | — |
 | 2 | **27.89±1.38** | 93.74±0.28 | -1.39 | 10.59 | 28.66 | 36.37 | 35.94 |
 | 3 | **27.52±1.61** | 93.82±0.28 | -1.76 | 10.15 | 29.13 | 37.29 | 33.49 |
 | 4 | **26.95±1.70** | 94.00±0.26 | -2.32 | 9.92 | 28.32 | 36.20 | 33.37 |
@@ -33,9 +33,9 @@ Spatial_G(x) = std_{u=1}^{G²}[ JS^(u) ]，G=14 时每 cell 恰为 1 个 patch�
 | 10 | **25.95±1.64** | 94.25±0.24 | -3.32 | 9.63 | 26.87 | 34.04 | 33.28 |
 | 14 | **27.88±1.15** | 93.88±0.24 | -1.39 | 11.39 | 26.39 | 33.27 | 40.48 |
 
-对照（γ=0.5）：仅 JS 29.19/93.78，仅 Spatial(G=7) 27.49/93.32。
+Reference (γ=0.5): JS only 29.19/93.78, Spatial only (G=7) 27.49/93.32.
 
-## γ × G（FPR95）
+## γ × G (FPR95)
 
 | G \ γ | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 |
 |---|---|---|---|---|---|---|---|---|---|---|

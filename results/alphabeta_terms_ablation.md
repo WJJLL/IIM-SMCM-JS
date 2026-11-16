@@ -1,32 +1,32 @@
-# S_{α,β} 的两个特例与 Global JS
+# Two special cases of S_{α,β} and Global JS
 
-IIM base，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集；G=7，γ=0.5，a=0.5（全局项占比）。
+IIM base, ImageNet-500-Hard as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets; G=7, γ=0.5, a=0.5 (share of the global term).
 
-全局项 $x_g=\alpha H(\bar q)-\beta\frac1P\sum_p H(q_p)$；区域项 $x_{sp}=\mathrm{std}_m[\alpha H(\bar q^{(m)})-\beta\frac{1}{|P_m|}\sum_{p\in P_m}H(q_p)]$。
+Global term $x_g=\alpha H(\bar q)-\beta\frac1P\sum_p H(q_p)$; regional term $x_{sp}=\mathrm{std}_m[\alpha H(\bar q^{(m)})-\beta\frac{1}{|P_m|}\sum_{p\in P_m}H(q_p)]$.
 
-## 单特征（该项单独作分数，取最佳方向）
+## Single feature (the term used alone as a score, best direction)
 
-| (α,β) | 统计量 | 全局项 FPR95 | 全局项 AUROC | 区域项 FPR95 | 区域项 AUROC |
+| (α,β) | statistic | global-term FPR95 | global-term AUROC | regional-term FPR95 | regional-term AUROC |
 |---|---|---|---|---|---|
-| (1,0) | 只 H(q̄)（β=0） | 93.45 | 58.32 | 57.21 | 81.73 |
-| (0,1) | 只 −平均 patch 熵（α=0） | 61.37 | 80.53 | 53.26 | 83.36 |
-| (1,1) | Global JS（α=β=1） | 65.30 | 84.55 | 62.78 | 80.66 |
+| (1,0) | only H(q̄) (β=0) | 93.45 | 58.32 | 57.21 | 81.73 |
+| (0,1) | only −mean patch entropy (α=0) | 61.37 | 80.53 | 53.26 | 83.36 |
+| (1,1) | Global JS (α=β=1) | 65.30 | 84.55 | 62.78 | 80.66 |
 
-## 叠加基座（γ=0.5, a=0.5, G=7）
+## Adding on top of the base (γ=0.5, a=0.5, G=7)
 
-基座 S-MCM：FPR95 29.28±1.48，AUROC 93.33±0.20。
+Base S-MCM: FPR95 29.28±1.48, AUROC 93.33±0.20.
 
-| (α,β) | 统计量 | 仅全局 FPR95 | 仅区域 FPR95 | 两者 FPR95 | 仅全局 AUROC | 仅区域 AUROC | 两者 AUROC |
+| (α,β) | statistic | global-only FPR95 | regional-only FPR95 | both FPR95 | global-only AUROC | regional-only AUROC | both AUROC |
 |---|---|---|---|---|---|---|---|
-| (1,0) | 只 H(q̄)（β=0） | 33.13±2.47 | 30.27±2.59 | 27.19±1.43 | 92.91 | 92.39 | 93.84 |
-| (0,1) | 只 −平均 patch 熵（α=0） | 32.43±3.10 | 30.14±2.55 | 30.84±2.71 | 91.94 | 92.47 | 92.40 |
-| (1,1) | Global JS（α=β=1） | 29.19±1.29 | 27.49±1.81 | 25.72±1.57 | 93.78 | 93.32 | 94.18 |
+| (1,0) | only H(q̄) (β=0) | 33.13±2.47 | 30.27±2.59 | 27.19±1.43 | 92.91 | 92.39 | 93.84 |
+| (0,1) | only −mean patch entropy (α=0) | 32.43±3.10 | 30.14±2.55 | 30.84±2.71 | 91.94 | 92.47 | 92.40 |
+| (1,1) | Global JS (α=β=1) | 29.19±1.29 | 27.49±1.81 | 25.72±1.57 | 93.78 | 93.32 | 94.18 |
 
-## 比值 r=β/α 扫描（γ=0.5, a=0.5, G=7）
+## Sweep over the ratio r=β/α (γ=0.5, a=0.5, G=7)
 
-因两项各自按 ID 标准差归一化，(α,β)→(cα,cβ) 等价，真正起作用的是 r=β/α。
+Since each of the two terms is normalized by its ID std, (α,β)→(cα,cβ) are equivalent, and what actually matters is r=β/α.
 
-| r | 仅全局 FPR95 | 仅区域 FPR95 | 两者 FPR95 | 两者 AUROC |
+| r | global-only FPR95 | regional-only FPR95 | both FPR95 | both AUROC |
 |---|---|---|---|---|
 | 0.00 | 33.13 | 30.27 | 27.19 | 93.84 |
 | 0.25 | 32.25 | 30.21 | 26.89 | 93.93 |

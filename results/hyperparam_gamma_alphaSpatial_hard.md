@@ -1,20 +1,20 @@
-# S-MCM-JS-Spatial：(gamma, alpha) 二维超参网格
+# S-MCM-JS-Spatial: two-dimensional (gamma, alpha) hyperparameter grid
 
-- ID = **ImageNet-500-Hard**（base 记录点，4-shot），OOD = iNaturalist / SUN / places365 / Texture
-- seeds = [1, 2, 3]；指标为 **4 个 OOD 集的平均 FPR95 / AUROC**
-- **S-MCM 的设置完全不动**：`lamda = 1.0*196/500 = 0.392`、`top_k=50`、`T=1`、`num_neg_prompts=300`
-- `gamma`：JS / Spatial 的总预算，相对 `std_ID(base)`
-- `alpha`：**Spatial 内部的比例参数**（= `JS_SPATIAL_A`）。`alpha=1` 只剩 JS，`alpha=0` 只剩 Spatial，`alpha=0.5` 为默认各半
-- 空间网格固定 `g=7`；`gamma=0` 时 alpha 无意义（退化成 S-MCM）
-- **一次前向**得到逐样本分量，整张网格离线重组，不再过模型
+- ID = **ImageNet-500-Hard** (base log point, 4-shot), OOD = iNaturalist / SUN / places365 / Texture
+- seeds = [1, 2, 3]; the metric is **FPR95 / AUROC averaged over the 4 OOD sets**
+- **The S-MCM setting is left completely untouched**: `lamda = 1.0*196/500 = 0.392`, `top_k=50`, `T=1`, `num_neg_prompts=300`
+- `gamma`: total budget of JS / Spatial, relative to `std_ID(base)`
+- `alpha`: **the proportion parameter inside Spatial** (= `JS_SPATIAL_A`). `alpha=1` leaves JS only, `alpha=0` leaves Spatial only, `alpha=0.5` is the default half-and-half
+- The spatial grid is fixed at `g=7`; when `gamma=0` alpha is meaningless (it degenerates to S-MCM)
+- A **single forward pass** yields the per-sample components; the whole grid is recomposed offline without running the model again
 
-## 0. 基线（gamma=0，即原封不动的 S-MCM）
+## 0. Baseline (gamma=0, i.e. untouched S-MCM)
 
-| 配置 | FPR95 | AUROC |
+| configuration | FPR95 | AUROC |
 |---|---|---|
-| S-MCM（lamda=0.392） | 29.28±1.48 | 93.33±0.20 |
+| S-MCM (lamda=0.392) | 29.28±1.48 | 93.33±0.20 |
 
-## 1. FPR95 二维网格（行 = gamma，列 = alpha）
+## 1. Two-dimensional FPR95 grid (rows = gamma, columns = alpha)
 
 | γ \ α | 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -35,7 +35,7 @@
 | **4** | 48.48 | 43.08 | 38.75 | 35.74 | 33.92 | 33.85 | 35.20 | 38.02 | 41.44 | 45.87 | 50.77 |
 | **5** | 50.80 | 45.16 | 40.70 | 37.17 | 35.37 | 35.25 | 36.80 | 39.66 | 43.54 | 48.09 | 53.34 |
 
-## 2. AUROC 二维网格（行 = gamma，列 = alpha）
+## 2. Two-dimensional AUROC grid (rows = gamma, columns = alpha)
 
 | γ \ α | 0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -56,17 +56,17 @@
 | **4** | 86.30 | 88.08 | 89.62 | 90.83 | 91.68 | 92.13 | 92.17 | 91.84 | 91.15 | 90.16 | 88.94 |
 | **5** | 85.43 | 87.33 | 88.99 | 90.32 | 91.24 | 91.73 | 91.79 | 91.42 | 90.67 | 89.60 | 88.29 |
 
-## 3. 最优点与鲁棒区
+## 3. Optimum and robust region
 
-- **FPR95 最优**：gamma=0.6, alpha=0.4 → 25.66±1.61（AUROC 94.11）
-- **AUROC 最优**：gamma=0.6, alpha=0.6 → 94.22（FPR95 26.07）
-- **默认点** gamma=0.2, alpha=0.5 → 26.86 / 93.90（相对基座 ΔFPR -2.42，ΔAUROC +0.57）
+- **Best FPR95**: gamma=0.6, alpha=0.4 → 25.66±1.61 (AUROC 94.11)
+- **Best AUROC**: gamma=0.6, alpha=0.6 → 94.22 (FPR95 26.07)
+- **Default point** gamma=0.2, alpha=0.5 → 26.86 / 93.90 (ΔFPR -2.42, ΔAUROC +0.57 relative to the base)
 
-- **FPR95 ≤ 25.86（最优 +0.2）的格子共 4 个**，gamma ∈ [0.5, 0.6]，alpha ∈ [0.4, 0.5]
+- **4 cells have FPR95 ≤ 25.86 (optimum +0.2)**, gamma ∈ [0.5, 0.6], alpha ∈ [0.4, 0.5]
 
-## 4. 逐 OOD 集拆解
+## 4. Per-OOD breakdown
 
-### 4.1 gamma=0.2 时随 alpha 变化
+### 4.1 Varying alpha at gamma=0.2
 
 | α | iNaturalist | SUN | places365 | Texture | AUROC |
 |---|-------------|-------------|-------------|-------------|---|
@@ -82,7 +82,7 @@
 | 0.9 | 11.10 | 26.02 | 32.97 | 39.79 | 93.87 |
 | 1 | 11.34 | 26.09 | 33.05 | 40.48 | 93.84 |
 
-### 4.2 alpha=0.5 时随 gamma 变化
+### 4.2 Varying gamma at alpha=0.5
 
 | γ | iNaturalist | SUN | places365 | Texture | AUROC |
 |---|-------------|-------------|-------------|-------------|---|

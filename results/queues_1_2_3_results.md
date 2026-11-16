@@ -1,33 +1,33 @@
-# 队列 1 / 2 / 3 评测结果汇总
+# Evaluation results summary for queues 1 / 2 / 3
 
-- 生成时间：2026-11-14 12:03
-- 代码版本：`bf47cae`
-- 数据集：发布版 few-shot split（2026-11-11 01:00 替换后的版本）
-- 指标：FPR@95TPR（%↓）/ AUROC（%↑），4 个 OOD 集（iNaturalist / SUN / places365 / Texture）平均
-- 统计：#seed 个随机种子的 mean ± std；增量表为**同 seed 配对**再平均
+- Generated: 2026-11-14 12:03
+- Code version: `bf47cae`
+- Dataset: released few-shot split (the version replaced at 2026-11-11 01:00)
+- Metric: FPR@95TPR (%↓) / AUROC (%↑), mean over the 4 OOD sets (iNaturalist / SUN / places365 / Texture)
+- Statistics: mean ± std over #seed seeds; the incremental tables average after **same-seed pairing**
 
-## 一、队列说明
+## Queue description
 
-| 队列 | 驱动脚本 | job 数 | 内容 | 输出位置 |
+| queue | driver script | number of jobs | content | output location |
 |---|---|---|---|---|
-| 1 | `/tmp/run_eval_1k.sh` | 12 | ImageNet-1k：4/16-shot × base/divmean × 3 seed | `<ckpt>/eval_spatial/log.txt` |
-| 2 | `/tmp/run_eval_full9_v2.sh` | 36 | 500-Easy / 500-Hard / 100：同上 12 组配置 | `<ckpt>/eval_full9/log.txt` |
-| 3 | `queue_zeroshot.sh` | 4 | zero-shot CLIP 基线（4 个数据集，无训练） | `output/zeroshot/<ds>/log.txt` |
-| 合计 | | **52** | | |
+| 1 | `/tmp/run_eval_1k.sh` | 12 | ImageNet-1k: 4/16-shot × base/divmean × 3 seed | `<ckpt>/eval_spatial/log.txt` |
+| 2 | `/tmp/run_eval_full9_v2.sh` | 36 | 500-Easy / 500-Hard / 100: the same 12 configurations | `<ckpt>/eval_full9/log.txt` |
+| 3 | `queue_zeroshot.sh` | 4 | zero-shot CLIP baseline (4 datasets, no training) | `output/zeroshot/<ds>/log.txt` |
+| total | | **52** | | |
 
-## 二、结论
+## Findings
 
-1. **免训练的空间分项在两个队列的 48 个 IIM 评测（16 个配置 × 3 seed）上全部改善 FPR95 与 AUROC**，增益随基线难度增加而变大（1k / Hard 约 −2.4，100 约 −1.7，Easy 约 −0.5）。
-2. 组成：全局 JS 项贡献 0.6~2.3 FPR，空间项再贡献 0~4.0 FPR。
-3. **空间项的增益高度集中在 Texture**（−1.6 ~ −4.0 FPR，也是各数据集上最难的 OOD 集），在 places365 / SUN 上只有 −0.4 ~ +0.9（几乎持平甚至略微变差）。所以方法可以讲成“对纹理类分布偏移特别有效”，而不是“普遍有效”——见第六节逐 OOD 分解。
-4. **`div_mean` 训练改动在新 split 上只对 ImageNet-1k 稳定为正**，在 Hard / Easy / 100 上多为负，不建议作为主贡献。
-5. `MCM` 在四个配置列中完全相同 —— 它只用冻结 CLIP 的全局特征、与训练无关，可作为评测流水线的 sanity check。
-6. zero-shot 基线给出**无训练**的参照：学习型 prompt 相对 zero-shot 把 1k 的 S-MCM 从 37.12 降到 23.46；再叠加空间分项到 20.98（同 4-shot 口径）。
+1. **The training-free spatial term improves both FPR95 and AUROC on all 48 IIM evaluations of the two queues (16 configurations × 3 seed)**, and the gain grows as the baseline gets harder (about −2.4 on 1k / Hard, −1.7 on 100, −0.5 on Easy).
+2. Composition: the global JS term contributes 0.6~2.3 FPR, and the spatial term contributes a further 0~4.0 FPR.
+3. **The gain of the spatial term is highly concentrated on Texture** (−1.6 ~ −4.0 FPR, which is also the hardest OOD set among the datasets), while on places365 / SUN it is only −0.4 ~ +0.9 (almost flat or even slightly worse). The method can therefore be described as "particularly effective on texture-type distribution shifts" rather than "generally effective" — see the per OOD dataset breakdown further below.
+4. **The `div_mean` training change is consistently positive on the new split only for ImageNet-1k**; on Hard / Easy / 100 it is mostly negative, so it is not recommended as a main contribution.
+5. `MCM` is exactly the same in the four configuration columns — it only uses the global features of the frozen CLIP and is independent of training, so it can serve as a sanity check of the evaluation pipeline.
+6. The zero-shot baseline provides a **training-free** reference: relative to zero-shot, learned prompts lower the S-MCM of 1k from 37.12 to 23.46, and adding the spatial term brings it to 20.98 (same 4-shot protocol).
 
-## 三、队列 2：ImageNet-500 / 100 主表
+## Queue 2: ImageNet-500 / 100 main tables
 
 
-### ImageNet-500-Easy：FPR95±std / AUROC
+### ImageNet-500-Easy: FPR95±std / AUROC
 | score                  | 4shot base (n=3) | 4shot divmean (n=3) | 16shot base (n=3) | 16shot divmean (n=3) |
 |------------------------|----------------------|----------------------|----------------------|----------------------|
 | MCM                    | 14.54±0.00 / 97.01 | 14.54±0.00 / 97.01 | 14.54±0.00 / 97.01 | 14.54±0.00 / 97.01 |
@@ -41,7 +41,7 @@
 | S-MCM-JS-Spatial       | 6.72±0.51 / 98.33 | 7.32±0.49 / 98.19 | 5.90±0.22 / 98.53 | 6.67±0.17 / 98.31 |
 
 
-### ImageNet-500-Hard：FPR95±std / AUROC
+### ImageNet-500-Hard: FPR95±std / AUROC
 | score                  | 4shot base (n=3) | 4shot divmean (n=3) | 16shot base (n=3) | 16shot divmean (n=3) |
 |------------------------|----------------------|----------------------|----------------------|----------------------|
 | MCM                    | 48.60±0.00 / 88.72 | 48.60±0.00 / 88.72 | 48.60±0.00 / 88.72 | 48.60±0.00 / 88.72 |
@@ -55,7 +55,7 @@
 | S-MCM-JS-Spatial       | 26.88±1.12 / 93.90 | 27.34±1.68 / 93.80 | 24.68±0.57 / 94.39 | 23.88±0.44 / 94.70 |
 
 
-### ImageNet-100：FPR95±std / AUROC
+### ImageNet-100: FPR95±std / AUROC
 | score                  | 4shot base (n=3) | 4shot divmean (n=3) | 16shot base (n=3) | 16shot divmean (n=3) |
 |------------------------|----------------------|----------------------|----------------------|----------------------|
 | MCM                    | 29.50±0.00 / 95.02 | 29.50±0.00 / 95.02 | 29.50±0.00 / 95.02 | 29.50±0.00 / 95.02 |
@@ -68,11 +68,11 @@
 | S-MCM-PC-JS-Spatial    | 9.40±0.24 / 97.96 | 11.08±0.19 / 97.79 | 8.18±0.25 / 98.27 | 9.18±0.80 / 98.06 |
 | S-MCM-JS-Spatial       | 9.39±0.27 / 97.95 | 10.85±0.19 / 97.82 | 8.23±0.27 / 98.27 | 8.93±0.68 / 98.10 |
 
-## 四、队列 1：ImageNet-1k 主表
+## Queue 1: ImageNet-1k main tables
 
 
-### ImageNet-1k：FPR95±std / AUROC
-_ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
+### ImageNet-1k: FPR95±std / AUROC
+_ID=50000 images (1000 classes); lamda = alpha·196/C = 0.196_
 | score                  | 4shot base (n=3) | 4shot divmean2 (n=3) | 16shot base (n=3) | 16shot divmean2 (n=3) |
 |------------------------|----------------------|----------------------|----------------------|----------------------|
 | MCM                    | 41.86±0.00 / 91.00 | 41.86±0.00 / 91.00 | 41.86±0.00 / 91.00 | 41.86±0.00 / 91.00 |
@@ -85,17 +85,17 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 | S-MCM-PC-JS-Spatial    | 21.21±0.38 / 95.24 | 20.82±0.57 / 95.24 | 19.50±0.79 / 95.70 | 18.77±0.76 / 95.80 |
 | S-MCM-JS-Spatial       | 20.98±0.34 / 95.25 | 20.70±0.55 / 95.21 | 19.56±0.85 / 95.66 | 19.00±0.78 / 95.72 |
 
-## 五、逐 OOD 数据集结果
+## Per OOD dataset results
 
-每个数据集的 4 个配置分别给出 4 个 OOD 集的结果与**4 集平均**。
-平均为“先每 seed 在 4 个集上平均，再跨 seed 汇总”，与日志末尾自带的 `avg.` 口径完全一致（已逐文件校验）。
+For each dataset, the 4 configurations report the results on the 4 OOD sets together with the **mean over the 4 OOD sets**.
+The averaging is "first average each seed over the 4 sets, then aggregate across seeds", fully consistent with the `avg.` protocol included at the end of the logs (verified file by file).
 
 
 ### ImageNet-1k
 
 #### 4-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.62±0.00 / 94.55 | 35.87±0.00 / 92.98 | 43.06±0.00 / 90.30 | 57.91±0.00 / 86.19 | 41.86±0.00 / 91.00 |
 | GL-MCM               | 15.24±2.15 / 96.75 | 25.26±1.83 / 94.14 | 34.63±1.19 / 91.08 | 48.06±0.82 / 88.07 | 30.80±0.56 / 92.51 |
@@ -109,7 +109,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.62±0.00 / 94.55 | 35.87±0.00 / 92.98 | 43.06±0.00 / 90.30 | 57.91±0.00 / 86.19 | 41.86±0.00 / 91.00 |
 | GL-MCM               | 16.92±0.93 / 96.62 | 25.73±1.14 / 94.09 | 35.17±0.54 / 91.02 | 48.40±0.39 / 88.11 | 31.55±0.53 / 92.46 |
@@ -123,7 +123,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.62±0.00 / 94.55 | 35.87±0.00 / 92.98 | 43.06±0.00 / 90.30 | 57.91±0.00 / 86.19 | 41.86±0.00 / 91.00 |
 | GL-MCM               | 13.43±1.96 / 97.26 | 24.22±0.98 / 94.54 | 33.52±0.82 / 91.65 | 44.61±1.18 / 89.14 | 28.95±1.08 / 93.15 |
@@ -137,7 +137,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.62±0.00 / 94.55 | 35.87±0.00 / 92.98 | 43.06±0.00 / 90.30 | 57.91±0.00 / 86.19 | 41.86±0.00 / 91.00 |
 | GL-MCM               | 13.18±1.38 / 97.32 | 24.42±1.50 / 94.47 | 34.19±1.21 / 91.45 | 43.18±1.20 / 89.82 | 28.74±0.97 / 93.26 |
@@ -154,7 +154,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.23±0.00 / 93.88 | 50.50±0.00 / 89.51 | 50.50±0.00 / 88.84 | 63.17±0.00 / 82.65 | 48.60±0.00 / 88.72 |
 | GL-MCM               | 23.26±1.20 / 95.02 | 40.37±2.74 / 89.88 | 45.70±3.46 / 87.93 | 56.02±0.45 / 84.22 | 41.34±1.85 / 89.26 |
@@ -168,7 +168,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.23±0.00 / 93.88 | 50.50±0.00 / 89.51 | 50.50±0.00 / 88.84 | 63.17±0.00 / 82.65 | 48.60±0.00 / 88.72 |
 | GL-MCM               | 21.08±1.21 / 95.47 | 40.78±4.45 / 89.63 | 45.56±3.99 / 87.84 | 52.46±0.77 / 85.68 | 39.97±1.93 / 89.65 |
@@ -182,7 +182,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.23±0.00 / 93.88 | 50.50±0.00 / 89.51 | 50.50±0.00 / 88.84 | 63.17±0.00 / 82.65 | 48.60±0.00 / 88.72 |
 | GL-MCM               | 19.05±1.99 / 96.04 | 37.62±2.15 / 90.70 | 42.71±1.58 / 89.02 | 49.17±0.53 / 86.36 | 37.14±0.77 / 90.53 |
@@ -196,7 +196,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 30.23±0.00 / 93.88 | 50.50±0.00 / 89.51 | 50.50±0.00 / 88.84 | 63.17±0.00 / 82.65 | 48.60±0.00 / 88.72 |
 | GL-MCM               | 19.35±1.39 / 96.02 | 36.37±2.20 / 91.10 | 42.25±0.49 / 89.31 | 46.38±0.65 / 87.64 | 36.09±0.43 / 91.02 |
@@ -213,7 +213,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.12±0.00 / 97.18 | 32.58±0.00 / 95.04 | 31.21±0.00 / 94.86 | 40.07±0.00 / 93.00 | 29.50±0.00 / 95.02 |
 | GL-MCM               | 3.81±0.45 / 99.04 | 14.07±0.96 / 97.23 | 20.81±0.40 / 95.87 | 24.56±1.29 / 95.30 | 15.81±0.65 / 96.86 |
@@ -227,7 +227,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.12±0.00 / 97.18 | 32.58±0.00 / 95.04 | 31.21±0.00 / 94.86 | 40.07±0.00 / 93.00 | 29.50±0.00 / 95.02 |
 | GL-MCM               | 5.61±0.56 / 98.69 | 14.49±1.12 / 97.10 | 20.97±1.27 / 95.71 | 25.10±2.50 / 95.32 | 16.54±0.78 / 96.71 |
@@ -241,7 +241,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.12±0.00 / 97.18 | 32.58±0.00 / 95.04 | 31.21±0.00 / 94.86 | 40.07±0.00 / 93.00 | 29.50±0.00 / 95.02 |
 | GL-MCM               | 2.84±0.11 / 99.24 | 9.91±0.87 / 98.00 | 14.58±0.84 / 97.01 | 17.54±0.79 / 96.67 | 11.22±0.37 / 97.73 |
@@ -255,7 +255,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.12±0.00 / 97.18 | 32.58±0.00 / 95.04 | 31.21±0.00 / 94.86 | 40.07±0.00 / 93.00 | 29.50±0.00 / 95.02 |
 | GL-MCM               | 3.59±0.49 / 99.04 | 9.99±1.47 / 97.84 | 15.11±1.33 / 96.81 | 15.74±0.62 / 96.92 | 11.11±0.66 / 97.65 |
@@ -272,7 +272,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.74±0.00 / 97.26 | 8.19±0.00 / 98.30 | 14.91±0.00 / 96.27 | 20.30±0.00 / 96.23 | 14.54±0.00 / 97.01 |
 | GL-MCM               | 6.62±2.51 / 98.36 | 7.08±0.92 / 98.32 | 14.07±0.86 / 96.15 | 20.89±1.71 / 94.95 | 12.17±0.96 / 96.94 |
@@ -286,7 +286,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 4-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.74±0.00 / 97.26 | 8.19±0.00 / 98.30 | 14.91±0.00 / 96.27 | 20.30±0.00 / 96.23 | 14.54±0.00 / 97.01 |
 | GL-MCM               | 5.94±2.37 / 98.57 | 6.23±0.52 / 98.61 | 13.48±0.56 / 96.42 | 14.38±2.06 / 96.55 | 10.00±0.86 / 97.54 |
@@ -300,7 +300,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / base
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.74±0.00 / 97.26 | 8.19±0.00 / 98.30 | 14.91±0.00 / 96.27 | 20.30±0.00 / 96.23 | 14.54±0.00 / 97.01 |
 | GL-MCM               | 3.10±0.35 / 99.02 | 6.03±0.38 / 98.56 | 12.54±0.48 / 96.58 | 15.21±0.74 / 96.30 | 9.22±0.17 / 97.61 |
@@ -314,7 +314,7 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 
 #### 16-shot / divmean
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |----------------------|-------------------|-------------------|-------------------|-------------------|------------------|
 | MCM                  | 14.74±0.00 / 97.26 | 8.19±0.00 / 98.30 | 14.91±0.00 / 96.27 | 20.30±0.00 / 96.23 | 14.54±0.00 / 97.01 |
 | GL-MCM               | 3.39±0.28 / 98.92 | 5.78±0.24 / 98.68 | 13.02±0.22 / 96.58 | 12.23±0.31 / 97.04 | 8.60±0.23 / 97.81 |
@@ -326,11 +326,11 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 | S-MCM-PC-JS-Spatial  | 2.81±0.34 / 99.15 | 4.54±0.14 / 98.98 | 12.32±0.29 / 96.78 | 8.65±0.22 / 98.02 | 7.08±0.21 / 98.23 |
 | S-MCM-JS-Spatial     | 2.44±0.25 / 99.20 | 4.23±0.09 / 99.04 | 11.74±0.24 / 96.92 | 8.29±0.25 / 98.07 | 6.67±0.17 / 98.31 |
 
-## 六、逐 OOD 集的增益分解（4-shot / 16-shot base）
+## Per OOD dataset gain breakdown (4-shot / 16-shot base)
 
-回答“增益来自哪个 OOD 集”。同 seed 配对后再平均。
+Answers "which OOD set does the gain come from". Same-seed pairing, then averaged.
 
-| 数据集 | shot | OOD 集 | S-MCM | +JS | +Spatial | 合计 ΔFPR | ΔAUROC |
+| dataset | shot | OOD set | S-MCM | +JS | +Spatial | total ΔFPR | ΔAUROC |
 |---|---|---|---|---|---|---|---|
 | ImageNet-1k | 4 | iNaturalist | 10.33 | -1.30 | -0.86 | **-2.16** | +0.40 |
 | ImageNet-1k | 4 | SUN | 17.52 | -1.01 | +0.17 | **-0.84** | +0.18 |
@@ -368,10 +368,10 @@ _ID=50000 图（1000 类）；lamda = alpha·196/C = 0.196_
 | ImageNet-500-Easy | 16 | places365 | 10.56 | -0.71 | +0.43 | **-0.28** | +0.14 |
 | ImageNet-500-Easy | 16 | Texture | 9.15 | +0.25 | -1.58 | **-1.32** | +0.19 |
 | | | | | | | | |
-## 七、队列 3：zero-shot 基线
+## Queue 3: zero-shot baseline
 
-_ZeroShot trainer，相同 4 个 OOD 集与相同 ID 划分；不含 JS / Spatial（该 trainer 不计算）。_
-_⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k 当作第 5 个 OOD 集评测，末尾 `avg.` 是 5 集平均；本节一律重算为**4 集平均**，与 IIM 口径一致。_
+_ZeroShot trainer, the same 4 OOD sets and the same ID split; no JS / Spatial (this trainer does not compute them)._
+_⚠️ The raw logs of `imagenet500easy`/`imagenet500hard` additionally evaluate ImageNet-1k as the 5th OOD set, and the trailing `avg.` is a 5-set mean; in this section everything is recomputed as a **mean over the 4 OOD sets**, consistent with the IIM protocol._
 
 | score | ImageNet-100 | ImageNet-500-Easy | ImageNet-500-Hard | ImageNet-1k |
 |------------|--------------------------|--------------------------|--------------------------|--------------------------|
@@ -381,9 +381,9 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 | S-MCM | 20.02 / 95.90 | 13.54 / 96.68 | 43.55 / 89.32 | 37.12 / 90.61 |
 
 
-**zero-shot 的逐 OOD 结果**
+**zero-shot per OOD results**
 
-| 数据集 | score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| dataset | score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |------------------|------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | ImageNet-100 | MCM | 13.29 / 97.39 | 36.38 / 94.86 | 32.73 / 94.86 | 38.32 / 93.34 | **30.18 / 95.11** |
 | ImageNet-100 | GL-MCM | 2.98 / 99.00 | 17.07 / 96.82 | 19.66 / 96.25 | 33.99 / 92.67 | **18.42 / 96.18** |
@@ -406,20 +406,20 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 | ImageNet-1k | S-MCM | 17.85 / 96.12 | 31.02 / 93.11 | 40.44 / 89.69 | 59.17 / 83.52 | **37.12 / 90.61** |
 | | | | | | | |
 
-**与学习型 prompt 对照**（zero-shot S-MCM → 最优 IIM S-MCM-JS-Spatial）
+**Comparison with learned prompts** (zero-shot S-MCM → best IIM S-MCM-JS-Spatial)
 
-| 数据集 | zero-shot S-MCM | 最优 IIM | ΔFPR | ΔAUROC |
+| dataset | zero-shot S-MCM | best IIM | ΔFPR | ΔAUROC |
 |---|---|---|---|---|
 | ImageNet-1k | 37.12 / 90.61 | **19.56 / 95.66** | -17.56 | +5.05 |
 | ImageNet-500-Hard | 43.55 / 89.32 | **24.68 / 94.39** | -18.87 | +5.08 |
 | ImageNet-100 | 20.02 / 95.90 | **8.23 / 98.27** | -11.78 | +2.37 |
 | ImageNet-500-Easy | 13.54 / 96.68 | **5.90 / 98.53** | -7.64 | +1.85 |
 
-## 八、增量分解（ΔFPR，同 seed 配对）
+## Incremental breakdown (ΔFPR, same-seed pairing)
 
 
 ### ImageNet-500-Easy
-| 组                          |     S-MCM |      +JS |  +Spatial |       合计 |
+| group                       |     S-MCM |      +JS |  +Spatial |      total |
 |----------------------------|-----------|----------|-----------|----------|
 | 4shot base                 |      7.30 |    -0.12 |     -0.46 |    -0.58 |
 | 4shot divmean              |      7.74 |    -0.18 |     -0.25 |    -0.42 |
@@ -428,7 +428,7 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 
 
 ### ImageNet-500-Hard
-| 组                          |     S-MCM |      +JS |  +Spatial |       合计 |
+| group                       |     S-MCM |      +JS |  +Spatial |      total |
 |----------------------------|-----------|----------|-----------|----------|
 | 4shot base                 |     29.29 |    -1.53 |     -0.89 |    -2.42 |
 | 4shot divmean              |     29.24 |    -1.01 |     -0.89 |    -1.90 |
@@ -437,7 +437,7 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 
 
 ### ImageNet-100
-| 组                          |     S-MCM |      +JS |  +Spatial |       合计 |
+| group                       |     S-MCM |      +JS |  +Spatial |      total |
 |----------------------------|-----------|----------|-----------|----------|
 | 4shot base                 |     11.42 |    -1.09 |     -0.94 |    -2.03 |
 | 4shot divmean              |     12.32 |    -0.41 |     -1.05 |    -1.46 |
@@ -446,16 +446,16 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 
 
 ### ImageNet-1k
-| 组                          |     S-MCM |      +JS |  +Spatial |       合计 |
+| group                       |     S-MCM |      +JS |  +Spatial |      total |
 |----------------------------|-----------|----------|-----------|----------|
 | 4shot base                 |     23.46 |    -1.39 |     -1.10 |    -2.48 |
 | 4shot divmean2             |     22.91 |    -1.43 |     -0.79 |    -2.21 |
 | 16shot base                |     21.77 |    -1.69 |     -0.52 |    -2.21 |
 | 16shot divmean2            |     21.03 |    -1.63 |     -0.41 |    -2.04 |
 
-## 九、base vs divmean 配对差（divmean − base）
+## Paired difference base vs divmean (divmean − base)
 
-| 数据集                |             ΔFPR |   ΔAUROC | n |
+| dataset               |             ΔFPR |   ΔAUROC | n |
 |---|---|---|---|
 | 1k 4shot           |    -0.28 ± 0.42 |    -0.04 | 3 |
 | 1k 16shot          |    -0.56 ± 0.17 |    +0.06 | 3 |
@@ -466,13 +466,13 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 | 500-Easy 4shot     |    +0.60 ± 0.29 |    -0.14 | 3 |
 | 500-Easy 16shot    |    +0.78 ± 0.21 |    -0.22 | 3 |
 
-**divmean 更优（ΔFPR < 0）的配置：3/8**
+**Configurations where divmean is better (ΔFPR < 0): 3/8**
 
-## 十、16 配置汇总
+## Summary of the 16 configurations
 
-### 主结果汇总：16 个配置（FPR95 ↓ / AUROC ↑）
+### Main result summary: 16 configurations (FPR95 ↓ / AUROC ↑)
 
-| 数据集 | shot | 训练 | S-MCM | **+ Spatial** | ΔFPR | ΔAUROC | n |
+| dataset | shot | training | S-MCM | **+ Spatial** | ΔFPR | ΔAUROC | n |
 |---|---|---|---|---|---|---|---|
 | ImageNet-1k | 4 | base | 23.46 | **20.98** | -2.48 | +0.49 | 3 |
 | ImageNet-1k | 4 | divmean | 22.91 | **20.70** | -2.21 | +0.45 | 3 |
@@ -491,23 +491,23 @@ _⚠️ `imagenet500easy`/`imagenet500hard` 的原始日志额外把 ImageNet-1k
 | 500-Easy | 16 | base | 6.48 | **5.90** | -0.58 | +0.15 | 3 |
 | 500-Easy | 16 | divmean | 7.07 | **6.67** | -0.39 | +0.11 | 3 |
 
-**FPR95 与 AUROC 同时改善的配置：16/16**
+**Configurations where both FPR95 and AUROC improve: 16/16**
 
-## 十一、注意事项
+## Notes
 
-- **`MCM` 在每张主表的四列里完全相同**（1k 41.86、Hard 48.60、100 29.50、Easy 14.54）。它只用冻结 CLIP 的全局图文特征、与训练无关，这既是评测流水线一致的证据，也说明它适合当**参照上界/下界**而不是方法。
-- **Easy 已接近饱和**：S-MCM 本身只有 6~7 FPR，增益被压到 0.4~0.6；不宜用 Easy 论证方法有效性，应主打 1k / Hard。
-- **zero-shot 的 MCM 与 IIM 的 MCM 不完全相同**（1k 42.26 vs 41.86），因为两者文本端不一样（zero-shot 用原始 classname 模板，IIM 用学习到的 global prompt），不能当成同一个数。
-- **zero-shot 的 `avg.` 口径与 IIM 不同**：`imagenet500easy` / `imagenet500hard` 的原始日志把 ImageNet-1k 当作第 5 个 OOD 集一起评，末尾 `avg.` 是 5 集平均（Easy S-MCM 会从 4 集的 13.54 变成 5 集的 18.36）。本报告第七节已统一重算为 4 集平均，**引用日志原文的 avg 会出错**。
-- 全部数字基于 **2026-11-11 01:00 替换后的发布 split**；更早的日志（如 `VERSIONS.md` 的 w5 / v6 两节）用的是旧 split，同配置可差 1~2 个 FPR，**禁止混用**。
-- 队列 2 曾有 1 个 job（Hard-divmean2 4shot seed2）以 SIGSEGV 退出，已补跑成功；本报告的 Hard divmean 4-shot 为补跑后的 3 seed 结果（n=2 时的旧值为 30.56±0.30，噪声很大，不应再引用）。
+- **`MCM` is exactly the same in the four columns of every main table** (1k 41.86, Hard 48.60, 100 29.50, Easy 14.54). It only uses the global image-text features of the frozen CLIP and is independent of training, which is both evidence that the evaluation pipeline is consistent and a reason to treat it as a **reference upper/lower bound** rather than as a method.
+- **Easy is already close to saturation**: S-MCM alone is only 6~7 FPR, so the gain is squeezed to 0.4~0.6; Easy should not be used to argue the effectiveness of the method, and the focus should be 1k / Hard.
+- **The MCM of zero-shot and the MCM of IIM are not exactly the same** (1k 42.26 vs 41.86), because the two text sides differ (zero-shot uses the original classname templates, IIM uses the learned global prompt), so they cannot be treated as the same number.
+- **The `avg.` protocol of zero-shot differs from that of IIM**: the raw logs of `imagenet500easy` / `imagenet500hard` evaluate ImageNet-1k together as the 5th OOD set, and the trailing `avg.` is a 5-set mean (Easy S-MCM changes from 13.54 with 4 sets to 18.36 with 5 sets). The zero-shot section of this report has recomputed everything as a mean over the 4 OOD sets; **quoting the avg from the raw log will produce wrong numbers**.
+- All numbers are based on the **released split replaced at 2026-11-11 01:00**; earlier logs (e.g. the w5 / v6 sections of `VERSIONS.md`) use the old split and can differ by 1~2 FPR for the same configuration, so **do not mix them**.
+- Queue 2 once had 1 job (Hard-divmean2 4shot seed2) exit with SIGSEGV and it was re-run successfully; the Hard divmean 4-shot numbers in this report are the 3-seed results after the re-run (the old value with n=2 was 30.56±0.30, very noisy, and should no longer be quoted).
 
-## 十二、复现
+## Reproduction
 
 ```bash
-# 表格（读 /mnt/mydrive/iim/output{,_1k} 的日志，纯 CPU）
+# tables (reads the logs under /mnt/mydrive/iim/output{,_1k}, CPU only)
 python tools/report_final_tables.py
 
-# 本报告
+# this report
 python tools/report_queue_results.py
 ```

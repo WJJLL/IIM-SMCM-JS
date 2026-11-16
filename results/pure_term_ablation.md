@@ -1,28 +1,28 @@
-# 只用共识项的消融（js_g / js_spatial）
+# Ablation using only the consensus terms (js_g / js_spatial)
 
-IIM base，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集；G=7（每 region 2×2 个 patch），α=0.5（js_g 占比），γ=0.5。
+IIM base, ImageNet-500-Hard as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets; G=7 (2×2 patches per region), α=0.5 (share of js_g), γ=0.5.
 
-## 主表
+## Main table
 
-| 分数构成 | 纯项 FPR95 | 纯项 AUROC | 叠加基座 FPR95 | 叠加基座 AUROC |
+| score composition | pure-term FPR95 | pure-term AUROC | with base FPR95 | with base AUROC |
 |---|---|---|---|---|
-| 仅 js_g | 65.30±0.96 | 84.55±0.88 | 29.19±1.29 | 93.78±0.30 |
-| 仅 js_spatial | 62.78±1.28 | 80.66±1.02 | 27.49±1.81 | 93.32±0.31 |
-| 两者 a=0.5 | 44.53±2.72 | 89.16±0.96 | 25.72±1.57 | 94.18±0.26 |
-| S-MCM 基座 | — | — | 29.28±1.48 | 93.33±0.20 |
+| js_g only | 65.30±0.96 | 84.55±0.88 | 29.19±1.29 | 93.78±0.30 |
+| js_spatial only | 62.78±1.28 | 80.66±1.02 | 27.49±1.81 | 93.32±0.31 |
+| both a=0.5 | 44.53±2.72 | 89.16±0.96 | 25.72±1.57 | 94.18±0.26 |
+| S-MCM base | — | — | 29.28±1.48 | 93.33±0.20 |
 
-## 逐 OOD 集 FPR95（叠加基座，a=0.5）
+## Per OOD dataset FPR95 (with base, a=0.5)
 
-| 集合 | FPR95 |
+| set | FPR95 |
 |---|---|
 | iNaturalist | 9.11 |
 | SUN | 26.85 |
 | places365 | 34.09 |
 | Texture | 32.81 |
 
-## α 扫描（γ=0.5, G=7）
+## α sweep (γ=0.5, G=7)
 
-| α | 纯项 FPR95 | 纯项 AUROC | 叠加 FPR95 | 叠加 AUROC |
+| α | pure-term FPR95 | pure-term AUROC | with base FPR95 | with base AUROC |
 |---|---|---|---|---|
 | 0.0 | 62.78 | 80.66 | 27.49 | 93.32 |
 | 0.1 | 57.03 | 83.03 | 26.77 | 93.60 |

@@ -1,22 +1,22 @@
-# ⚠️ 注意：本文扫的 alpha 是 **S-MCM 的 λ 系数**（λ=alpha·196/500），不是 Spatial 内部的比例。
-# 若要看「alpha = Spatial 内部比例、S-MCM 不动」的二维网格，见 `results/hyperparam_gamma_alphaSpatial_hard.md`。
+# ⚠️ Note: the alpha swept in this report is the **λ coefficient of S-MCM** (λ=alpha·196/500), not the proportion inside Spatial.
+# For the two-dimensional grid where "alpha = the proportion inside Spatial and S-MCM is untouched", see `results/hyperparam_gamma_alphaSpatial_hard.md`.
 
-# S-MCM-JS-Spatial：(alpha, gamma) 二维超参网格
+# S-MCM-JS-Spatial: two-dimensional (alpha, gamma) hyperparameter grid
 
-- ID = **ImageNet-500-Hard**（base 记录点，4-shot），OOD = iNaturalist / SUN / places365 / Texture
-- seeds = [1, 2, 3]；指标为 **4 个 OOD 集的平均 FPR95 / AUROC**
-- `alpha` 控制 S-MCM 的 λ（λ = alpha·196/500）；`gamma` 控制 JS/Spatial 的总预算（相对 std_ID(base)）
-- JS/Spatial 内部比例固定 a=0.5、空间网格 g=7
-- **一次前向**得到逐样本分量，整张网格离线重组，alpha / gamma 均不需再过模型
+- ID = **ImageNet-500-Hard** (base log point, 4-shot), OOD = iNaturalist / SUN / places365 / Texture
+- seeds = [1, 2, 3]; the metric is **FPR95 / AUROC averaged over the 4 OOD sets**
+- `alpha` controls the λ of S-MCM (λ = alpha·196/500); `gamma` controls the total budget of JS/Spatial (relative to std_ID(base))
+- The proportion inside JS/Spatial is fixed at a=0.5, spatial grid g=7
+- A **single forward pass** yields the per-sample components and the whole grid is recomposed offline; neither alpha nor gamma requires running the model again
 
-## 0. 基线
+## 0. Baseline
 
-| 配置 | FPR95 | AUROC |
+| configuration | FPR95 | AUROC |
 |---|---|---|
-| alpha=1.0, gamma=0（= S-MCM） | 29.28±1.48 | 93.33 |
-| alpha=0,   gamma=0（= R-MCM） | 38.00±2.09 | 90.98 |
+| alpha=1.0, gamma=0 (= S-MCM) | 29.28±1.48 | 93.33 |
+| alpha=0,   gamma=0 (= R-MCM) | 38.00±2.09 | 90.98 |
 
-## 1. FPR95 二维网格（行 = gamma，列 = alpha）
+## 1. Two-dimensional FPR95 grid (rows = gamma, columns = alpha)
 
 | γ \ α | 0 | 0.05 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -35,7 +35,7 @@
 | **3** | 30.96 | 30.99 | 30.97 | 31.07 | 31.08 | 31.16 | 31.28 | 31.39 | 31.47 | 31.59 | 31.72 | 31.86 |
 | **5** | 34.52 | 34.53 | 34.57 | 34.62 | 34.67 | 34.74 | 34.81 | 34.88 | 34.92 | 35.04 | 35.13 | 35.25 |
 
-## 2. AUROC 二维网格（行 = gamma，列 = alpha）
+## 2. Two-dimensional AUROC grid (rows = gamma, columns = alpha)
 
 | γ \ α | 0 | 0.05 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -54,16 +54,16 @@
 | **3** | 92.82 | 92.82 | 92.82 | 92.82 | 92.81 | 92.80 | 92.78 | 92.76 | 92.73 | 92.70 | 92.67 | 92.64 |
 | **5** | 91.88 | 91.88 | 91.88 | 91.87 | 91.87 | 91.86 | 91.84 | 91.82 | 91.80 | 91.78 | 91.76 | 91.73 |
 
-## 3. 最优点与鲁棒区
+## 3. Optimum and robust region
 
-- **FPR95 最优**：alpha=0.6, gamma=0.75 → 25.71±1.70（AUROC 94.19）
-- **AUROC 最优**：alpha=0.7, gamma=0.75 → 94.20（FPR95 25.72）
+- **Best FPR95**: alpha=0.6, gamma=0.75 → 25.71±1.70 (AUROC 94.19)
+- **Best AUROC**: alpha=0.7, gamma=0.75 → 94.20 (FPR95 25.72)
 
-- **FPR95 ≤ 25.91（最优 +0.2）的格子共 11 个**，alpha 覆盖 [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]，gamma 覆盖 [0.5, 0.75]
+- **11 cells have FPR95 ≤ 25.91 (optimum +0.2)**, with alpha covering [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] and gamma covering [0.5, 0.75]
 
-## 4. 边际切片
+## 4. Marginal slices
 
-### 4a. alpha 扫描（gamma 固定几档）
+### 4a. alpha sweep (gamma fixed at several levels)
 
 | alpha | γ=0 | γ=0.2 | γ=0.5 | γ=1 | γ=2 |
 |---|---------|---------|---------|---------|---------|
@@ -80,7 +80,7 @@
 | 0.9 | 29.50 | 26.98 | 25.71 | 26.43 | 29.36 |
 | 1 | 29.28 | 26.86 | 25.71 | 26.59 | 29.50 |
 
-### 4b. gamma 扫描（alpha 固定几档）
+### 4b. gamma sweep (alpha fixed at several levels)
 
 | gamma | α=0.2 | α=0.5 | α=0.8 | α=1 |
 |---|---------|---------|---------|---------|
@@ -99,19 +99,19 @@
 | 3 | 31.07 | 31.28 | 31.59 | 31.86 |
 | 5 | 34.62 | 34.81 | 35.04 | 35.25 |
 
-## 5. 逐 OOD 拆解
+## 5. Per-OOD breakdown
 
-| 配置 | iNaturalist | SUN | places365 | Texture | 4 集均 |
+| configuration | iNaturalist | SUN | places365 | Texture | 4-set mean |
 |---|-------------|-------------|-------------|-------------|---|
-| alpha=1.0, gamma=0（S-MCM） | 12.55 | 27.30 | 34.43 | 42.84 | **29.28** |
-| alpha=1.0, gamma=0.2（当前默认） | 10.45 | 26.21 | 33.58 | 37.19 | **26.86** |
-| alpha=0.6, gamma=0.75（最优） | 8.32 | 27.70 | 34.64 | 32.18 | **25.71** |
+| alpha=1.0, gamma=0 (S-MCM) | 12.55 | 27.30 | 34.43 | 42.84 | **29.28** |
+| alpha=1.0, gamma=0.2 (current default) | 10.45 | 26.21 | 33.58 | 37.19 | **26.86** |
+| alpha=0.6, gamma=0.75 (best) | 8.32 | 27.70 | 34.64 | 32.18 | **25.71** |
 
-## 6. alpha 与 gamma 的交互
+## 6. Interaction between alpha and gamma
 
-- gamma=0：alpha 0→1 的 FPR95 走 38.00 → 29.28，最优 alpha=1（29.28）
-- gamma=0.2：alpha 0→1 的 FPR95 走 31.97 → 26.86，最优 alpha=1（26.86）
-- gamma=0.5：alpha 0→1 的 FPR95 走 27.86 → 25.71，最优 alpha=0.9（25.71）
-- gamma=1：alpha 0→1 的 FPR95 走 26.40 → 26.59，最优 alpha=0.3（26.07）
+- gamma=0: FPR95 as alpha goes 0→1 moves 38.00 → 29.28, best alpha=1 (29.28)
+- gamma=0.2: FPR95 as alpha goes 0→1 moves 31.97 → 26.86, best alpha=1 (26.86)
+- gamma=0.5: FPR95 as alpha goes 0→1 moves 27.86 → 25.71, best alpha=0.9 (25.71)
+- gamma=1: FPR95 as alpha goes 0→1 moves 26.40 → 26.59, best alpha=0.3 (26.07)
 
-如果不同 gamma 下的最优 alpha 基本一致，说明两者近似可分离、可以分开调；若最优 alpha 随 gamma 移动，则必须联合调。
+If the best alpha is essentially the same across different gamma, the two are approximately separable and can be tuned separately; if the best alpha moves with gamma, they have to be tuned jointly.

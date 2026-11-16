@@ -1,26 +1,26 @@
-# S_{α,β}(x) = α·H(q̄) − β·(1/P)Σ_p H(q_p) 网格
+# Grid over S_{α,β}(x) = α·H(q̄) − β·(1/P)Σ_p H(q_p)
 
-IIM base，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集，不含 spatial。基座 = S-MCM。
+IIM base, ImageNet-500-Hard as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets, no spatial term. Base = S-MCM.
 
-结合方式（与线上一致，只用 ID 定标）：
+Combination (identical to the online version, calibrated on ID only):
 
 ```
 T = α·hq − β·ape
 S = base − γ · std_ID(base)/std_ID(T) · (T − mean_ID(T))
 ```
 
-因按 std 归一化，(α,β)→(cα,cβ) 等价，真正起作用的是 r = β/α。
+Because the normalization is by std, (α,β)→(cα,cβ) are equivalent, so what actually matters is r = β/α.
 
-## 三个特例（FPR95 / AUROC）
+## Three special cases (FPR95 / AUROC)
 
-| (α,β) | 统计量 | 基座 γ=0 | γ=0.2 | γ=0.5 | γ=1.0 |
+| (α,β) | statistic | base γ=0 | γ=0.2 | γ=0.5 | γ=1.0 |
 |---|---|---|---|---|---|
 | (0,0) | S-MCM | 29.28±1.48 / 93.33 | — | — | — |
 | (1,0) | Global Prediction Entropy | — | 28.06±1.00 / 93.83 | 33.13±2.46 / 92.91 | 63.96±5.94 / 87.61 |
 | (0,1) | Negative Avg Patch Entropy | — | 30.11±2.09 / 92.89 | 32.43±3.10 / 91.94 | 36.19±4.16 / 90.36 |
 | (1,1) | Global JS | — | 27.74±1.19 / 93.84 | 29.19±1.29 / 93.78 | 33.66±1.45 / 92.96 |
 
-## (α,β) 网格：每格的最优 FPR95
+## (α,β) grid: best FPR95 per cell
 
 | α \ β | 0.00 | 0.25 | 0.50 | 0.75 | 1.00 |
 |---|---|---|---|---|---|
@@ -30,9 +30,9 @@ S = base − γ · std_ID(base)/std_ID(T) · (T − mean_ID(T))
 | 0.75 | 28.06 | 27.77 | 27.38 | 27.74 | 28.39 |
 | 1.00 | 28.06 | 27.88 | 27.55 | 27.43 | 27.74 |
 
-## 比值 r = β/α（α=1，各 r 取最优 γ）
+## Ratio r = β/α (α=1, best γ for each r)
 
-| r | 最优 γ | FPR95 | AUROC |
+| r | best γ | FPR95 | AUROC |
 |---|---|---|---|
 | 0.00 | 0.2 | 28.06±1.00 | 93.83±0.29 |
 | 0.25 | 0.2 | 27.88±0.85 | 93.91±0.29 |

@@ -1,12 +1,12 @@
-# zero-shot CLIP：γ=0.5、α(Spatial 占比)=0.5
+# zero-shot CLIP: γ=0.5, α (Spatial share)=0.5
 
-- 环境变量：`JS_GAMMA=0.5`、`JS_SPATIAL_A=0.5`、`JS_SPATIAL_GRID=7`
-- 指标：**FPR@95TPR（%↓） / AUROC（%↑）**，4 个 OOD 集平均
-- `coef` 与 `mu` 只用 **ID 集**标定（与 IIM 口径一致）
+- Environment variables: `JS_GAMMA=0.5`, `JS_SPATIAL_A=0.5`, `JS_SPATIAL_GRID=7`
+- Metrics: **FPR@95TPR (%↓) / AUROC (%↑)**, mean over the 4 OOD sets
+- `coef` and `mu` are calibrated **on the ID set only** (same protocol as IIM)
 
 ## ImageNet-1k
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 sets** |
 |------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM | 30.70 / 94.63 | 37.40 / 92.57 | 43.66 / 89.96 | 57.29 / 86.18 | 42.26 / 90.83 |
 | **MCM-JS-Spatial** | 13.13 / 97.30 | 26.02 / 94.76 | 35.23 / 91.61 | 41.35 / 90.35 | **28.93 / 93.51** |
@@ -17,7 +17,7 @@
 
 ## ImageNet-500-Hard
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 sets** |
 |------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM | 28.85 / 94.34 | 52.68 / 89.30 | 51.32 / 88.91 | 61.52 / 83.31 | 48.59 / 88.97 |
 | **MCM-JS-Spatial** | 13.06 / 97.40 | 34.41 / 92.67 | 38.36 / 91.31 | 44.26 / 88.91 | **32.52 / 92.57** |
@@ -28,7 +28,7 @@
 
 ## ImageNet-100
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 sets** |
 |------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM | 13.29 / 97.39 | 36.38 / 94.86 | 32.73 / 94.86 | 38.32 / 93.34 | 30.18 / 95.11 |
 | **MCM-JS-Spatial** | 2.19 / 99.23 | 14.66 / 97.43 | 16.64 / 96.87 | 21.44 / 95.98 | **13.73 / 97.38** |
@@ -39,7 +39,7 @@
 
 ## ImageNet-500-Easy
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 sets** |
 |------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM | 16.04 / 97.13 | 8.10 / 98.28 | 15.26 / 96.21 | 19.75 / 96.27 | 14.79 / 96.97 |
 | **MCM-JS-Spatial** | 4.50 / 98.67 | 4.88 / 98.84 | 12.21 / 96.95 | 13.23 / 97.05 | **8.70 / 97.88** |
@@ -48,9 +48,9 @@
 | R-MCM | 3.72 / 98.84 | 6.04 / 98.63 | 13.15 / 96.72 | 24.56 / 94.42 | 11.87 / 97.15 |
 | **R-MCM-JS-Spatial** | 1.94 / 99.21 | 5.14 / 98.79 | 12.13 / 96.90 | 18.46 / 95.20 | **9.42 / 97.53** |
 
-## 各基座的 JS-Spatial 增益（4 集平均）
+## JS-Spatial gain per base (mean over the 4 sets)
 
-| ID 数据集 | 基座 | 原始 FPR95 | +JS-Spatial | ΔFPR | ΔAUROC |
+| ID dataset | base | original FPR95 | +JS-Spatial | ΔFPR | ΔAUROC |
 |---|---|---|---|---|---|
 | ImageNet-1k | MCM | 42.26 | 28.93 | **-13.33** | +2.67 |
 | ImageNet-1k | GL-MCM | 35.24 | 30.41 | **-4.84** | +1.36 |
@@ -65,9 +65,9 @@
 | ImageNet-500-Easy | GL-MCM | 13.54 | 11.14 | **-2.40** | +0.45 |
 | ImageNet-500-Easy | R-MCM | 11.87 | 9.42 | **-2.45** | +0.37 |
 
-## γ=0.2 vs γ=0.5（JS-Spatial 行）
+## γ=0.2 vs γ=0.5 (JS-Spatial rows)
 
-| ID 数据集 | 基座 | γ=0.2 | γ=0.5 | 差（0.5−0.2） |
+| ID dataset | base | γ=0.2 | γ=0.5 | difference (0.5−0.2) |
 |---|---|---|---|---|
 | ImageNet-1k | MCM | 34.13 / 92.45 | 28.93 / 93.51 | **-5.19** / +1.06 |
 | ImageNet-1k | GL-MCM | 32.10 / 91.73 | 30.41 / 92.26 | **-1.70** / +0.53 |
@@ -82,11 +82,11 @@
 | ImageNet-500-Easy | GL-MCM | 11.94 / 96.93 | 11.14 / 97.06 | **-0.79** / +0.13 |
 | ImageNet-500-Easy | R-MCM | 10.20 / 97.43 | 9.42 / 97.53 | **-0.79** / +0.10 |
 
-## 每个 ID 数据集的 6 条分数排名（FPR95）
+## Ranking of the 6 scores per ID dataset (FPR95)
 
 **ImageNet-1k**
 
-| 排名 | score | FPR95 | AUROC |
+| rank | score | FPR95 | AUROC |
 |---|---|---|---|
 | 1 | MCM-JS-Spatial | 28.93 | 93.51 |
 | 2 | R-MCM-JS-Spatial | 29.38 | 92.82 |
@@ -97,7 +97,7 @@
 
 **ImageNet-500-Hard**
 
-| 排名 | score | FPR95 | AUROC |
+| rank | score | FPR95 | AUROC |
 |---|---|---|---|
 | 1 | MCM-JS-Spatial | 32.52 | 92.57 |
 | 2 | R-MCM-JS-Spatial | 33.55 | 91.91 |
@@ -108,7 +108,7 @@
 
 **ImageNet-100**
 
-| 排名 | score | FPR95 | AUROC |
+| rank | score | FPR95 | AUROC |
 |---|---|---|---|
 | 1 | R-MCM-JS-Spatial | 13.51 | 97.10 |
 | 2 | MCM-JS-Spatial | 13.73 | 97.38 |
@@ -119,7 +119,7 @@
 
 **ImageNet-500-Easy**
 
-| 排名 | score | FPR95 | AUROC |
+| rank | score | FPR95 | AUROC |
 |---|---|---|---|
 | 1 | MCM-JS-Spatial | 8.70 | 97.88 |
 | 2 | R-MCM-JS-Spatial | 9.42 | 97.53 |

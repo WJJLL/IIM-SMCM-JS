@@ -1,8 +1,8 @@
-# zero-shot ID / OOD Global JS 分布（KDE 曲线）
+# zero-shot ID / OOD Global JS distribution (KDE curves)
 
-OOD 曲线 = 4 个 OOD 集各自 KDE 的平均（等权）。
+OOD curve = mean of the KDEs of the 4 OOD sets (equal weight).
 
-| ID 数据集 | n(ID) | median ID | iNat | SUN | Places | Texture | 4-OOD 平均单特征 AUROC |
+| ID dataset | n(ID) | median ID | iNat | SUN | Places | Texture | 4-OOD mean single-feature AUROC |
 |---|---|---|---|---|---|---|---|
 | IN-500-Hard | 25000 | 0.3740 | 0.2878 | 0.2979 | 0.3062 | 0.3163 | 84.01 |
 | IN-500-Easy | 25000 | 0.4448 | 0.3495 | 0.3441 | 0.3566 | 0.3614 | 86.66 |

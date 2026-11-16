@@ -1,6 +1,6 @@
-# zero-shot 箱线图（4 个 ID 数据集 × 2 个指标）
+# zero-shot box plots (4 ID datasets × 2 metrics)
 
-| ID 数据集 | 指标 | median ID | iNat | SUN | Plac | Text | AUROC(4集平均) |
+| ID dataset | metric | median ID | iNat | SUN | Plac | Text | AUROC(4-set mean) |
 |---|---|---|---|---|---|---|---|
 | IN-500-Hard | Global JS | 0.3740 | 0.2878 | 0.2979 | 0.3062 | 0.3163 | 84.01 |
 | IN-500-Easy | Global JS | 0.4448 | 0.3495 | 0.3441 | 0.3566 | 0.3614 | 86.66 |

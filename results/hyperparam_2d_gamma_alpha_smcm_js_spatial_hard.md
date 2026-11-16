@@ -1,17 +1,17 @@
-# S-MCM-JS-Spatial 的 (γ, α) 二维超参数分析
+# Two-dimensional (γ, α) hyperparameter analysis of S-MCM-JS-Spatial
 
-**ID 数据**：ImageNet-500-Hard（`ImageNet-500-Hard/new_4shots`，`part=new`，base 方法，4-shot）  
-**OOD 数据**：iNaturalist / SUN / places365 / Texture（4 集平均）  
-**随机种子**：[1, 2, 3]  
-**空间网格**：g = 7（14×14 patch → 7×7 自适应池化）  
-**搜索范围**：γ ∈ [0, 1]（16 点，小值密）/ α ∈ [0, 1]（11 点，步长 0.1）
+**ID data**: ImageNet-500-Hard (`ImageNet-500-Hard/new_4shots`, `part=new`, base method, 4-shot)  
+**OOD data**: iNaturalist / SUN / places365 / Texture (mean over the 4 OOD sets)  
+**Seeds**: [1, 2, 3]  
+**Spatial grid**: g = 7 (14×14 patches → 7×7 adaptive pooling)  
+**Search range**: γ ∈ [0, 1] (16 points, denser at small values) / α ∈ [0, 1] (11 points, step 0.1)
 
-## 参数含义
+## Parameter meaning
 
-| 符号 | 含义 | 代码位置 |
+| symbol | meaning | code location |
 |---|---|---|
-| **γ** | 辅助项总预算。JS 与 Spatial 在 ID 上的波动幅度合计不超过 γ·σ_ID(S-MCM) | `JS_GAMMA` |
-| **α** | Spatial 项的预算占比（JS 占 1−α） | `JS_SPATIAL_A` = 1−α |
+| **γ** | total budget of the auxiliary terms. The combined fluctuation of JS and Spatial on ID does not exceed γ·σ_ID(S-MCM) | `JS_GAMMA` |
+| **α** | share of the budget taken by the Spatial term (JS takes 1−α) | `JS_SPATIAL_A` = 1−α |
 
 $$
 \text{coef}_{js}=(1-\alpha)\,\gamma\,\frac{\sigma_{ID}(S_{MCM})}{\sigma_{ID}(JS)},\qquad \text{coef}_{sp}=\alpha\,\gamma\,\frac{\sigma_{ID}(S_{MCM})}{\sigma_{ID}(JS_{std})}
@@ -22,24 +22,24 @@ S = S_{MCM} - \text{coef}_{js}\,(JS-\mu_{JS}) - \text{coef}_{sp}\,(JS_{std}-\mu_
 
 $$
 
-`(coef, μ)` 全部只用 **ID 集** 标定，不接触任何 OOD 数字。分数越小越像 ID。
+`(coef, μ)` are calibrated on the **ID set** only and never touch any OOD number. Smaller scores are more ID-like.
 
-## 加速说明
+## Speed-up
 
-图像特征**只前向一次**（每个 seed 一遍，共 3 遍；ID 25,000 + 4 个 OOD 集 35,640 = 60,640 张/seed，约 7.8 min/seed），逐样本分量已落盘为 `npz`。
+The image features are **forwarded only once** (one pass per seed, 3 passes in total; ID 25,000 + 4 OOD sets 35,640 = 60,640 images/seed, about 7.8 min/seed), and the per-sample components were dumped to disk as `npz`.
 
-本表 16×11×3 = **528** 次评测，实际耗时 **15.6 s**（纯 CPU，不占 GPU）。
+This table required 16×11×3 = **528** evaluations and took **15.6 s** in practice (CPU only, no GPU).
 
-## 0. 基座（γ = 0，与 α 无关）
+## 0. Base (γ = 0, independent of α)
 
 | seed | S-MCM FPR95 | S-MCM AUROC |
 |---|---|---|
 | 1 | 29.74 | 93.16 |
 | 2 | 27.63 | 93.55 |
 | 3 | 30.48 | 93.27 |
-| **均值±std** | 29.28±1.48 | 93.33±0.20 |
+| **mean±std** | 29.28±1.48 | 93.33±0.20 |
 
-## 1. FPR95 全网格（%↓，3 seed 均值）
+## 1. Full FPR95 grid (%↓, mean over 3 seeds)
 
 ### FPR95
 
@@ -62,9 +62,9 @@ $$
 | **0.85** | 32.23 | 30.28 | 28.61 | 27.47 | 26.65 | 26.10 | 26.18 | 26.60 | 27.40 | 28.53 | 30.19 |
 | **1.00** | 33.66 | 31.46 | 29.41 | 28.08 | 27.12 | 26.59 | 26.58 | 27.05 | 28.17 | 29.46 | 31.47 |
 
-> 加粗 = 线上默认 (γ=0.2, α=0.5)；全网格最优 (γ=0.6, α=0.6) → 25.66
+> Bold = online default (γ=0.2, α=0.5); grid optimum (γ=0.6, α=0.6) → 25.66
 
-## 2. AUROC 全网格（%↑，3 seed 均值）
+## 2. Full AUROC grid (%↑, mean over 3 seeds)
 
 ### AUROC
 
@@ -88,11 +88,11 @@ $$
 | **1.00** | 92.96 | 93.41 | 93.75 | 93.97 | 94.07 | 94.05 | 93.90 | 93.61 | 93.19 | 92.64 | 91.96 |
 
 
-## 3. 边际曲线
+## 3. Marginal curves
 
-### 3.1 固定 α = 0.5，扫 γ
+### 3.1 Fixed α = 0.5, sweeping γ
 
-| γ | FPR95 | AUROC | ΔFPR vs 基座 |
+| γ | FPR95 | AUROC | ΔFPR vs base |
 |---|---|---|---|
 | 0.00 | 29.28 | 93.33 | +0.00 |
 | 0.02 | 28.85 | 93.41 | -0.44 |
@@ -111,9 +111,9 @@ $$
 | 0.85 | 26.10 | 94.13 | -3.18 |
 | 1.00 | 26.59 | 94.05 | -2.69 |
 
-### 3.2 固定 γ = 0.2，扫 α
+### 3.2 Fixed γ = 0.2, sweeping α
 
-| α（Spatial 占比） | FPR95 | AUROC |
+| α (Spatial share) | FPR95 | AUROC |
 |---|---|---|
 | 0.0 | 27.74 | 93.84 |
 | 0.1 | 27.47 | 93.87 |
@@ -127,25 +127,25 @@ $$
 | 0.9 | 26.78 | 93.74 |
 | 1.0 | 26.92 | 93.67 |
 
-### 3.3 固定 γ = 0.2，扫 α 之后再看「只 JS / 只 Spatial」
+### 3.3 After the γ = 0.2 sweep over α: "JS only / Spatial only"
 
-| α | 含义 | FPR95@γ=0.2 | FPR95@γ=0.5 |
+| α | meaning | FPR95@γ=0.2 | FPR95@γ=0.5 |
 |---|---|---|---|
-| 0.0 | 仅 JS（不启用 Spatial） | 27.74 | 29.19 |
-| 1.0 | 仅 Spatial（不启用 JS） | 26.92 | 27.49 |
+| 0.0 | JS only (Spatial disabled) | 27.74 | 29.19 |
+| 1.0 | Spatial only (JS disabled) | 26.92 | 27.49 |
 
-## 4. 最优点的稳定性
+## 4. Stability of the optimum
 
-| seed | 该 seed 的 FPR95 最优 (γ, α) | 该点 FPR95 |
+| seed | FPR95 optimum for that seed (γ, α) | FPR95 at that point |
 |---|---|---|
 | 1 | (0.50, 0.5) | 26.45 |
 | 2 | (0.60, 0.6) | 23.80 |
 | 3 | (0.60, 0.6) | 26.54 |
-| **3-seed 均值最优** | **(0.60, 0.6)** | **25.66** |
+| **best 3-seed mean** | **(0.60, 0.6)** | **25.66** |
 
-**稳健区（FPR95 距最优 ≤ 0.1）**：4 / 165 个格子；γ ∈ [0.50, 0.60]，α ∈ [0.5, 0.6]。
+**Robust region (FPR95 within 0.1 of the optimum)**: 4 / 165 cells; γ ∈ [0.50, 0.60], α ∈ [0.5, 0.6].
 
-## 5. 3 个 seed 之间的离散度（FPR95 的 std）
+## 5. Spread across the 3 seeds (std of FPR95)
 
 | γ \ α | 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -166,22 +166,22 @@ $$
 | **0.85** | 1.32 | 1.47 | 1.72 | 1.59 | 1.61 | 1.61 | 1.85 | 1.81 | 1.82 | 1.75 | 1.88 |
 | **1.00** | 1.45 | 1.45 | 1.69 | 1.65 | 1.62 | 1.93 | 1.98 | 2.02 | 1.79 | 1.84 | 1.79 |
 
-整张网格上 FPR95 的 seed-std 范围 1.13 – 2.02，基座本身是 1.48。数值本身随 seed 抖动，但**同一 seed 内 (γ, α) 的排序是一致的**（见第 4 节）。
+Across the whole grid the seed-std of FPR95 ranges over 1.13 – 2.02, while the base itself is 1.48. The values jitter with the seed, but **within a single seed the ranking of (γ, α) is consistent** (see Section 4).
 
-## 6. 结论
+## 6. Findings
 
-1. **基座**：S-MCM = **29.28** FPR95 / 93.33 AUROC。
-2. **默认 (γ=0.20, α=0.50)**：**26.86** / 93.90，ΔFPR **-2.42**，ΔAUROC **+0.57**。
-3. **网格最优点**：γ=0.60、α=0.6 → **25.66** / 94.11（ΔFPR -3.62）。但这是**在 4 个 OOD 集上直接挑出来的**，不能作为超参选择依据。
-4. **α 的作用**：γ=0.2 时 α 从 0（只 JS）到 1（只 Spatial），FPR95 在 α ∈ [0.8, 0.8] 之间基本平坦（≈26.68–27.74）；两端都更差，说明**两项需要同时在场**。
-5. **γ 的作用**：α=0.5 时 γ 从 0 到 1，FPR95 先降后升，最优点在 γ≈0.70；γ>0.5 之后 OOD 侧开始被推坏。
-6. **为什么报 γ=0.2**：γ=0.2 是「辅助项在 ID 上的波动 ≤ 20% σ_ID(S-MCM)」这条**只用 ID 统计量**的准则定出来的上限；若改用 OOD 直接挑 γ，留一 OOD 集验证显示并不迁移（见 `results/hyperparam_js_spatial_base4shot_hard.md` 第 8 节）。
+1. **Base**: S-MCM = **29.28** FPR95 / 93.33 AUROC.
+2. **Default (γ=0.20, α=0.50)**: **26.86** / 93.90, ΔFPR **-2.42**, ΔAUROC **+0.57**.
+3. **Grid optimum**: γ=0.60, α=0.6 → **25.66** / 94.11 (ΔFPR -3.62). But this is **picked directly on the 4 OOD sets** and cannot serve as a basis for hyperparameter selection.
+4. **Role of α**: at γ=0.2, going from α=0 (JS only) to 1 (Spatial only), FPR95 is essentially flat over α ∈ [0.8, 0.8] (≈26.68–27.74); both ends are worse, which shows that **both terms must be present at the same time**.
+5. **Role of γ**: at α=0.5, going from γ=0 to 1, FPR95 first drops and then rises, with the optimum around γ≈0.70; beyond γ>0.5 the OOD side starts to be pushed too far.
+6. **Why γ=0.2 is reported**: γ=0.2 is the upper bound given by the criterion "fluctuation of the auxiliary terms on ID ≤ 20% σ_ID(S-MCM)", which uses **ID statistics only**; if γ were instead picked directly on OOD, leave-one-OOD-dataset validation shows that it does not transfer (see Section 8 of `results/hyperparam_js_spatial_base4shot_hard.md`).
 
-## 7. 更宽的稳健区与逐 OOD 集的 γ 迁移
+## 7. Wider robust region and per-OOD-dataset γ transfer
 
-### 7.1 相对基座的改善（FPR95，α=0.5）
+### 7.1 Improvement over the base (FPR95, α=0.5)
 
-| γ | iNaturalist | SUN | places365 | Texture | 4 集均 |
+| γ | iNaturalist | SUN | places365 | Texture | 4-set mean |
 |---|------------|------------|------------|------------|---|
 | 0.0 | 12.55 | 27.30 | 34.43 | 42.84 | 29.28 |
 | 0.1 | 11.26 | 26.45 | 33.75 | 39.66 | 27.78 |
@@ -190,26 +190,26 @@ $$
 | 0.4 | 9.46 | 26.50 | 33.77 | 34.02 | 25.94 |
 | 0.6 | 8.91 | 27.30 | 34.62 | 31.96 | 25.70 |
 
-### 7.2 每个 OOD 集上 γ=0.2 与 γ=0.6 谁更好
+### 7.2 Which of γ=0.2 and γ=0.6 is better on each OOD dataset
 
-| OOD 集 | γ=0.2 | γ=0.6 | 差（0.6−0.2） | 结论 |
+| OOD dataset | γ=0.2 | γ=0.6 | difference (0.6−0.2) | finding |
 |---|---|---|---|---|
-| iNaturalist | 10.45 | 8.91 | -1.54 | γ=0.6 更好 |
-| SUN | 26.21 | 27.30 | +1.09 | γ=0.2 更好 |
-| places365 | 33.58 | 34.62 | +1.03 | γ=0.2 更好 |
-| Texture | 37.19 | 31.96 | -5.23 | γ=0.6 更好 |
+| iNaturalist | 10.45 | 8.91 | -1.54 | γ=0.6 is better |
+| SUN | 26.21 | 27.30 | +1.09 | γ=0.2 is better |
+| places365 | 33.58 | 34.62 | +1.03 | γ=0.2 is better |
+| Texture | 37.19 | 31.96 | -5.23 | γ=0.6 is better |
 
-- 4 集里 **2/4** 支持 γ=0.6。
-- 也就是说「γ 能不能取大」取决于落到哪个 OOD 集：iNat/Texture 上大 γ 明显更好，SUN/places365 上大 γ 会略差。因为事先不知道测试时是哪一类 shift，取 γ=0.2 是**不看 OOD 也能保证不亏**的选择。
+- **2/4** of the 4 sets favour γ=0.6.
+- In other words, whether γ can be taken large depends on which OOD dataset one lands on: on iNat/Texture a large γ is clearly better, while on SUN/places365 a large γ is slightly worse. Since one does not know in advance which type of shift the test set will contain, taking γ=0.2 is the choice that **guarantees no loss without looking at OOD**.
 
-- 距最优 ≤0.1：4/165 格，γ∈[0.50,0.60]，α∈[0.5,0.6]
-- 距最优 ≤0.3：11/165 格，γ∈[0.40,0.70]，α∈[0.5,0.7]
-- 距最优 ≤0.5：18/165 格，γ∈[0.35,0.85]，α∈[0.4,0.7]
-- 距最优 ≤1.0：48/165 格，γ∈[0.25,1.00]，α∈[0.3,0.9]
+- Within 0.1 of the optimum: 4/165 cells, γ∈[0.50,0.60], α∈[0.5,0.6]
+- Within 0.3 of the optimum: 11/165 cells, γ∈[0.40,0.70], α∈[0.5,0.7]
+- Within 0.5 of the optimum: 18/165 cells, γ∈[0.35,0.85], α∈[0.4,0.7]
+- Within 1.0 of the optimum: 48/165 cells, γ∈[0.25,1.00], α∈[0.3,0.9]
 
-- 在 α∈[0.3,0.7] 的每一列里，最优 γ 分别是：
+- For each column with α∈[0.3,0.7], the best γ is respectively:
 
-| α | 最优 γ | FPR95 | γ=0.2 时的 FPR95 |
+| α | best γ | FPR95 | FPR95 at γ=0.2 |
 |---|---|---|---|
 | 0.3 | 0.50 | 26.43 | 27.00 |
 | 0.4 | 0.50 | 25.98 | 26.97 |

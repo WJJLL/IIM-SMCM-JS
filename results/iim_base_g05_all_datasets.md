@@ -1,12 +1,12 @@
-# IIM base：4 个基座 + JS-Spatial（γ=0.5、α_spatial=0.5）
+# IIM base: 4 bases + JS-Spatial (γ=0.5, α_spatial=0.5)
 
-**随机种子**：[1, 2, 3]（每个逐 OOD 列为 seed 均值；“4 集平均”列为 seed 均值±seed 间样本标准差 ddof=1）  
-**逐 OOD 列格式**：FPR@95TPR（%↓） / AUROC（%↑）  
-**加速**：图像塔每个 ID 集/每个 OOD 集只前向一次，4/16-shot 与全部 seed 共享
+**Seeds**: [1, 2, 3] (each per OOD dataset column is the seed mean; the "mean over the 4 OOD sets" column is the seed mean ± sample std across seeds, ddof=1)  
+**Per OOD dataset column format**: FPR@95TPR (%↓) / AUROC (%↑)  
+**Speed-up**: the image tower forwards each ID set / each OOD set only once, shared across 4/16-shot and all seeds
 
 ## ImageNet-1k · 4-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 30.59 / 94.55 | 35.86 / 92.98 | 43.03 / 90.30 | 57.91 / 86.19 | 41.85±0.00 / 91.00±0.00 |
 | **MCM-JS-Spatial** | 10.33 / 97.80 | 21.57 / 95.55 | 30.92 / 92.79 | 35.53 / 91.88 | **24.59±0.13 / 94.51±0.05** |
@@ -19,7 +19,7 @@
 
 ## ImageNet-1k · 16-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 30.59 / 94.55 | 35.86 / 92.98 | 43.03 / 90.30 | 57.91 / 86.19 | 41.85±0.00 / 91.00±0.00 |
 | **MCM-JS-Spatial** | 10.24 / 97.84 | 21.58 / 95.59 | 30.97 / 92.82 | 34.79 / 92.07 | **24.39±0.55 / 94.58±0.05** |
@@ -32,7 +32,7 @@
 
 ## ImageNet-500-Hard · 4-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 30.22 / 93.88 | 50.47 / 89.51 | 50.46 / 88.84 | 63.16 / 82.65 | 48.58±0.00 / 88.72±0.00 |
 | **MCM-JS-Spatial** | 12.38 / 97.54 | 32.12 / 93.27 | 36.66 / 91.88 | 39.44 / 90.21 | **30.15±0.88 / 93.22±0.16** |
@@ -45,7 +45,7 @@
 
 ## ImageNet-500-Hard · 16-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 30.22 / 93.88 | 50.47 / 89.51 | 50.46 / 88.84 | 63.16 / 82.65 | 48.58±0.00 / 88.72±0.00 |
 | **MCM-JS-Spatial** | 11.73 / 97.64 | 30.84 / 93.52 | 35.79 / 92.06 | 37.87 / 90.52 | **29.06±0.69 / 93.44±0.13** |
@@ -58,7 +58,7 @@
 
 ## ImageNet-100 · 4-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 11.86 / 97.28 | 29.43 / 95.21 | 28.80 / 95.02 | 37.54 / 93.20 | 26.91±0.00 / 95.18±0.00 |
 | **MCM-JS-Spatial** | 1.91 / 99.34 | 13.08 / 97.64 | 16.47 / 96.93 | 16.06 / 96.96 | **11.88±0.42 / 97.72±0.05** |
@@ -71,7 +71,7 @@
 
 ## ImageNet-100 · 16-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 11.86 / 97.28 | 29.43 / 95.21 | 28.80 / 95.02 | 37.54 / 93.20 | 26.91±0.00 / 95.18±0.00 |
 | **MCM-JS-Spatial** | 2.24 / 99.27 | 11.90 / 97.80 | 14.12 / 97.23 | 15.44 / 97.03 | **10.92±0.09 / 97.83±0.03** |
@@ -84,7 +84,7 @@
 
 ## ImageNet-500-Easy · 4-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 14.73 / 97.26 | 8.19 / 98.30 | 14.89 / 96.27 | 20.27 / 96.23 | 14.52±0.00 / 97.01±0.00 |
 | **MCM-JS-Spatial** | 3.85 / 98.88 | 4.97 / 98.89 | 11.80 / 97.03 | 10.89 / 97.53 | **7.88±0.05 / 98.08±0.02** |
@@ -97,7 +97,7 @@
 
 ## ImageNet-500-Easy · 16-shot
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|-------------|-------------|-------------|-------------|------------------------|
 | MCM | 14.73 / 97.26 | 8.19 / 98.30 | 14.89 / 96.27 | 20.27 / 96.23 | 14.52±0.00 / 97.01±0.00 |
 | **MCM-JS-Spatial** | 3.33 / 99.00 | 4.57 / 98.96 | 11.31 / 97.11 | 10.02 / 97.77 | **7.31±0.15 / 98.21±0.02** |
@@ -108,9 +108,9 @@
 | S-MCM | 2.64 / 99.07 | 3.54 / 99.15 | 10.56 / 97.17 | 9.15 / 98.15 | 6.47±0.15 / 98.38±0.03 |
 | **S-MCM-JS-Spatial** | 1.76 / 99.39 | 4.07 / 99.11 | 10.61 / 97.28 | 7.56 / 98.35 | **6.00±0.47 / 98.53±0.06** |
 
-## JS-Spatial 增益
+## JS-Spatial gain
 
-| ID 数据集 | shot | 基座 | 原始 FPR95 | +JS-Spatial | ΔFPR | ΔAUROC | 3-seed 胜率 |
+| ID dataset | shot | base | original FPR95 | +JS-Spatial | ΔFPR | ΔAUROC | 3-seed win rate |
 |---|---|---|---|---|---|---|---|
 | ImageNet-1k | 4 | MCM | 41.85 | 24.59 | **-17.26** | +3.50 | 3/3 |
 | ImageNet-1k | 4 | GL-MCM | 30.78 | 23.72 | **-7.07** | +1.76 | 3/3 |
@@ -145,9 +145,9 @@
 | ImageNet-500-Easy | 16 | R-MCM | 8.29 | 6.12 | **-2.17** | +0.44 | 3/3 |
 | ImageNet-500-Easy | 16 | S-MCM | 6.47 | 6.00 | **-0.47** | +0.15 | 3/3 |
 
-## 每个 (数据集, shot) 的最优分数
+## Best score for each (dataset, shot)
 
-| ID 数据集 | shot | 最优 score | FPR95 | AUROC |
+| ID dataset | shot | best score | FPR95 | AUROC |
 |---|---|---|---|---|
 | ImageNet-1k | 4 | **S-MCM-JS-Spatial** | 19.96±0.43 | 95.47 |
 | ImageNet-1k | 16 | **S-MCM-JS-Spatial** | 18.38±0.80 | 95.90 |

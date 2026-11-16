@@ -1,12 +1,12 @@
-# Spatial（格子间 JS 标准差，g=7）在 ID / OOD 上的分布
+# Distribution of Spatial (inter-cell JS std, g=7) on ID / OOD
 
-越大越像 ID。分布统计为逐 seed 算后取 mean±std；`n` 为单次评测的样本数。
+The larger the value, the more ID-like it is. Distribution statistics are computed per seed and then reported as mean±std; `n` is the number of samples in a single evaluation.
 
 ## IIM 4-shot
 
 ### ImageNet-500-Hard
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.16511±0.00212 | **0.16435** | 0.16410±0.00226 | 0.03738 | — | — |
 | iNat | 10000 | 0.12042±0.00196 | **0.11878** | 0.11873±0.00215 | 0.02617 | 45.11 | 90.72±0.33 |
@@ -14,11 +14,11 @@
 | Places | 10000 | 0.14512±0.00237 | **0.14320** | 0.14291±0.00244 | 0.03434 | 82.19 | 70.54±2.11 |
 | Texture | 5640 | 0.12243±0.00086 | **0.11804** | 0.11823±0.00041 | 0.03099 | 44.65 | 87.51±0.97 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04537，SUN -0.02461，Places -0.02119，Texture -0.04587
+- ID median − OOD median: iNat -0.04537, SUN -0.02461, Places -0.02119, Texture -0.04587
 
 ### ImageNet-500-Easy
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.15976±0.00116 | **0.15895** | 0.15886±0.00113 | 0.03333 | — | — |
 | iNat | 10000 | 0.11621±0.00097 | **0.11454** | 0.11441±0.00130 | 0.02536 | 38.10 | 91.84±0.31 |
@@ -26,11 +26,11 @@
 | Places | 10000 | 0.13513±0.00087 | **0.13307** | 0.13307±0.00088 | 0.03075 | 72.25 | 76.93±0.65 |
 | Texture | 5640 | 0.11853±0.00040 | **0.11449** | 0.11442±0.00027 | 0.02920 | 39.47 | 88.55±0.33 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04445，SUN -0.02953，Places -0.02579，Texture -0.04444
+- ID median − OOD median: iNat -0.04445, SUN -0.02953, Places -0.02579, Texture -0.04444
 
 ### ImageNet-100
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 5000 | 0.18710±0.00207 | **0.18562** | 0.18518±0.00220 | 0.04164 | — | — |
 | iNat | 10000 | 0.13045±0.00376 | **0.12888** | 0.12894±0.00366 | 0.02481 | 29.31 | 94.58±1.11 |
@@ -38,11 +38,11 @@
 | Places | 10000 | 0.15370±0.00300 | **0.15168** | 0.15171±0.00279 | 0.03322 | 69.64 | 80.23±1.62 |
 | Texture | 5640 | 0.13600±0.00146 | **0.13275** | 0.13275±0.00114 | 0.02930 | 38.22 | 90.91±0.91 |
 
-- ID 中位数 − OOD 中位数：iNat -0.05624，SUN -0.03791，Places -0.03347，Texture -0.05243
+- ID median − OOD median: iNat -0.05624, SUN -0.03791, Places -0.03347, Texture -0.05243
 
 ### ImageNet-1k
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 50000 | 0.16656±0.00020 | **0.16618** | 0.16597±0.00026 | 0.03693 | — | — |
 | iNat | 10000 | 0.11963±0.00119 | **0.11769** | 0.11755±0.00103 | 0.02768 | 41.11 | 91.24±0.78 |
@@ -50,13 +50,13 @@
 | Places | 10000 | 0.14498±0.00079 | **0.14311** | 0.14299±0.00096 | 0.03476 | 80.65 | 72.00±0.65 |
 | Texture | 5640 | 0.12114±0.00084 | **0.11546** | 0.11542±0.00064 | 0.03365 | 39.75 | 87.70±0.49 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04842，SUN -0.02725，Places -0.02298，Texture -0.05055
+- ID median − OOD median: iNat -0.04842, SUN -0.02725, Places -0.02298, Texture -0.05055
 
 ## IIM 16-shot
 
 ### ImageNet-500-Hard
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.17046±0.00106 | **0.16976** | 0.16959±0.00118 | 0.03856 | — | — |
 | iNat | 10000 | 0.12151±0.00275 | **0.11951** | 0.11968±0.00291 | 0.02720 | 40.68 | 91.81±0.99 |
@@ -64,11 +64,11 @@
 | Places | 10000 | 0.14681±0.00063 | **0.14500** | 0.14479±0.00077 | 0.03538 | 79.32 | 73.15±0.99 |
 | Texture | 5640 | 0.12328±0.00043 | **0.11811** | 0.11819±0.00067 | 0.03323 | 39.60 | 88.44±0.37 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04991，SUN -0.02843，Places -0.02480，Texture -0.05140
+- ID median − OOD median: iNat -0.04991, SUN -0.02843, Places -0.02480, Texture -0.05140
 
 ### ImageNet-500-Easy
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.16715±0.00103 | **0.16691** | 0.16665±0.00123 | 0.03428 | — | — |
 | iNat | 10000 | 0.11840±0.00113 | **0.11660** | 0.11671±0.00114 | 0.02580 | 32.25 | 93.41±0.64 |
@@ -76,11 +76,11 @@
 | Places | 10000 | 0.13673±0.00106 | **0.13476** | 0.13459±0.00128 | 0.03229 | 64.76 | 80.87±1.04 |
 | Texture | 5640 | 0.11682±0.00057 | **0.11262** | 0.11261±0.00054 | 0.02900 | 28.13 | 91.86±0.38 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04994，SUN -0.03733，Places -0.03205，Texture -0.05404
+- ID median − OOD median: iNat -0.04994, SUN -0.03733, Places -0.03205, Texture -0.05404
 
 ### ImageNet-100
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 5000 | 0.19207±0.00139 | **0.19118** | 0.19093±0.00136 | 0.04131 | — | — |
 | iNat | 10000 | 0.13435±0.00276 | **0.13258** | 0.13284±0.00263 | 0.02564 | 30.24 | 94.60±1.03 |
@@ -88,11 +88,11 @@
 | Places | 10000 | 0.15454±0.00237 | **0.15262** | 0.15250±0.00234 | 0.03316 | 65.24 | 82.89±1.14 |
 | Texture | 5640 | 0.13877±0.00112 | **0.13540** | 0.13558±0.00092 | 0.02955 | 36.53 | 91.40±0.47 |
 
-- ID 中位数 − OOD 中位数：iNat -0.05809，SUN -0.04172，Places -0.03843，Texture -0.05534
+- ID median − OOD median: iNat -0.05809, SUN -0.04172, Places -0.03843, Texture -0.05534
 
 ### ImageNet-1k
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 50000 | 0.16676±0.00109 | **0.16631** | 0.16626±0.00119 | 0.03654 | — | — |
 | iNat | 10000 | 0.11839±0.00202 | **0.11643** | 0.11646±0.00204 | 0.02772 | 37.82 | 92.00±0.61 |
@@ -100,13 +100,13 @@
 | Places | 10000 | 0.14357±0.00037 | **0.14174** | 0.14173±0.00025 | 0.03477 | 78.13 | 73.58±0.68 |
 | Texture | 5640 | 0.12004±0.00104 | **0.11504** | 0.11495±0.00136 | 0.03408 | 37.99 | 88.46±0.09 |
 
-- ID 中位数 − OOD 中位数：iNat -0.04980，SUN -0.02868，Places -0.02453，Texture -0.05131
+- ID median − OOD median: iNat -0.04980, SUN -0.02868, Places -0.02453, Texture -0.05131
 
 ## zero-shot
 
 ### ImageNet-500-Hard
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.06117±0.00000 | **0.05992** | 0.05992±0.00000 | 0.01679 | — | — |
 | iNat | 10000 | 0.04083±0.00000 | **0.03988** | 0.03988±0.00000 | 0.00992 | 37.39 | 92.20±0.00 |
@@ -114,11 +114,11 @@
 | Places | 10000 | 0.05057±0.00000 | **0.04902** | 0.04902±0.00000 | 0.01429 | 76.42 | 74.13±0.00 |
 | Texture | 5640 | 0.04359±0.00000 | **0.04223** | 0.04223±0.00000 | 0.01271 | 49.77 | 86.79±0.00 |
 
-- ID 中位数 − OOD 中位数：iNat -0.02004，SUN -0.01262，Places -0.01090，Texture -0.01769
+- ID median − OOD median: iNat -0.02004, SUN -0.01262, Places -0.01090, Texture -0.01769
 
 ### ImageNet-500-Easy
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 25000 | 0.07795±0.00000 | **0.07599** | 0.07599±0.00000 | 0.02331 | — | — |
 | iNat | 10000 | 0.04950±0.00000 | **0.04853** | 0.04853±0.00000 | 0.01057 | 29.05 | 94.51±0.00 |
@@ -126,11 +126,11 @@
 | Places | 10000 | 0.05706±0.00000 | **0.05540** | 0.05540±0.00000 | 0.01484 | 58.60 | 84.89±0.00 |
 | Texture | 5640 | 0.05195±0.00000 | **0.04907** | 0.04907±0.00000 | 0.01606 | 37.34 | 89.13±0.00 |
 
-- ID 中位数 − OOD 中位数：iNat -0.02746，SUN -0.02281，Places -0.02059，Texture -0.02692
+- ID median − OOD median: iNat -0.02746, SUN -0.02281, Places -0.02059, Texture -0.02692
 
 ### ImageNet-100
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 5000 | 0.07759±0.00000 | **0.07530** | 0.07530±0.00000 | 0.02505 | — | — |
 | iNat | 10000 | 0.04415±0.00000 | **0.04323** | 0.04323±0.00000 | 0.00954 | 18.49 | 96.70±0.00 |
@@ -138,11 +138,11 @@
 | Places | 10000 | 0.05466±0.00000 | **0.05279** | 0.05279±0.00000 | 0.01542 | 59.07 | 85.41±0.00 |
 | Texture | 5640 | 0.05087±0.00000 | **0.04913** | 0.04913±0.00000 | 0.01445 | 45.66 | 89.74±0.00 |
 
-- ID 中位数 − OOD 中位数：iNat -0.03207，SUN -0.02424，Places -0.02251，Texture -0.02616
+- ID median − OOD median: iNat -0.03207, SUN -0.02424, Places -0.02251, Texture -0.02616
 
 ### ImageNet-1k
 
-| 集合 | n | mean | median（逐 seed 平均） | median（逐 seed 中位数 mean±std） | IQR | Spatial 单特征 FPR95 | Spatial 单特征 AUROC |
+| set | n | mean | median (mean over seeds) | median (per-seed median mean±std) | IQR | Spatial single-feature FPR95 | Spatial single-feature AUROC |
 |---|---|---|---|---|---|---|
 | ID | 50000 | 0.06355±0.00000 | **0.06209** | 0.06209±0.00000 | 0.01702 | — | — |
 | iNat | 10000 | 0.04380±0.00000 | **0.04293** | 0.04293±0.00000 | 0.00992 | 41.77 | 91.31±0.00 |
@@ -150,11 +150,11 @@
 | Places | 10000 | 0.05318±0.00000 | **0.05175** | 0.05175±0.00000 | 0.01457 | 77.33 | 73.16±0.00 |
 | Texture | 5640 | 0.04577±0.00000 | **0.04418** | 0.04418±0.00000 | 0.01356 | 48.79 | 86.01±0.00 |
 
-- ID 中位数 − OOD 中位数：iNat -0.01915，SUN -0.01250，Places -0.01033，Texture -0.01791
+- ID median − OOD median: iNat -0.01915, SUN -0.01250, Places -0.01033, Texture -0.01791
 
-## 汇总：中位数（三种设置，取逐 seed 平均后的中位数，即箱体图里的黑线）
+## Summary: medians (three settings; the median after averaging over seeds, i.e. the black line in the box plots)
 
-| 设置 | ID 数据集 | ID | iNat | SUN | Places | Texture |
+| setting | ID dataset | ID | iNat | SUN | Places | Texture |
 |---|---|---|---|---|---|---|
 | IIM 4-shot | ImageNet-500-Hard | 0.1644 | 0.1188 | 0.1397 | 0.1432 | 0.1180 |
 | IIM 4-shot | ImageNet-500-Easy | 0.1589 | 0.1145 | 0.1293 | 0.1331 | 0.1145 |
@@ -169,9 +169,9 @@
 | zero-shot | ImageNet-100 | 0.0753 | 0.0432 | 0.0511 | 0.0528 | 0.0491 |
 | zero-shot | ImageNet-1k | 0.0621 | 0.0429 | 0.0496 | 0.0518 | 0.0442 |
 
-## 与 Global JS 的重叠程度对比（ID 的 IQR vs 中位数差）
+## Overlap comparison with Global JS (ID IQR vs median gap)
 
-| 设置 | ID 数据集 | Spatial: ID IQR | Spatial: ID−OOD 中位数差 | Global JS: ID IQR | Global JS: ID−OOD 中位数差 |
+| setting | ID dataset | Spatial: ID IQR | Spatial: ID−OOD median gap | Global JS: ID IQR | Global JS: ID−OOD median gap |
 |---|---|---|---|---|---|
 | IIM 4-shot | ImageNet-500-Hard | 0.0374 | +0.0344 | 0.2235 | +0.2289 |
 | IIM 4-shot | ImageNet-500-Easy | 0.0333 | +0.0361 | 0.1859 | +0.1602 |

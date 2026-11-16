@@ -1,19 +1,19 @@
-# Spatial 网格粒度 G（S-MCM-JS-Spatial, γ=0.5, α_sp=0.5）
+# Spatial grid granularity G (S-MCM-JS-Spatial, γ=0.5, α_sp=0.5)
 
-IIM base，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集；FPR95/AUROC 为 4-OOD 平均的 seed 均值±标准差。
+IIM base, ImageNet-500-Hard as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets; FPR95/AUROC are the seed mean±std of the 4-OOD mean.
 
-## 主表（只列整除 14 的均匀划分）
+## Main table (only uniform partitions that divide 14 evenly)
 
-| G | 每 region patch 数 | Spatial 单特征 AUROC | FPR95 | AUROC | ΔFPR95 |
+| G | patches per region | Spatial single-feature AUROC | FPR95 | AUROC | ΔFPR95 |
 |---|---|---|---|---|---|
-| — (S-MCM 基座) | — | — | 29.28±1.48 | 93.33±0.20 | — |
+| — (S-MCM base) | — | — | 29.28±1.48 | 93.33±0.20 | — |
 | 2 | 49 | 61.55 | 27.89±1.38 | 93.74±0.28 | -1.39 |
 | **7** | 4 | 80.66 | **25.72±1.57** | **94.18±0.26** | **-3.56** |
 | 14 † | 1 | 50.00 | 27.88±1.15 | 93.88±0.24 | -1.39 |
 
-† $G=14$ 每 region 仅 1 个 patch，此时 $\mathrm{JS}^{(m)}\equiv0$，Spatial 项恒为 0、单特征 AUROC 恰为 50.0，等价于该项失效（只剩强度减半的 JS）。
+† At $G=14$ each region has only 1 patch; here $\mathrm{JS}^{(m)}\equiv0$, so the Spatial term is identically 0, its single-feature AUROC is exactly 50.0, and the term effectively fails (only the JS with halved strength is left).
 
-## 逐 OOD 集 FPR95（γ=0.5）
+## Per OOD dataset FPR95 (γ=0.5)
 
 | G | iNaturalist | SUN | places365 | Texture |
 |---|---|---|---|---|
@@ -27,16 +27,16 @@ IIM base，ImageNet-500-Hard 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集�
 | 10 | 9.63 | 26.87 | 34.04 | 33.28 |
 | 14 | 11.39 | 26.39 | 33.27 | 40.48 |
 
-## 补充表（全部 G，含非均匀划分）
+## Supplementary table (all G, including non-uniform partitions)
 
-| G | 每 region patch 数 | 均匀 | Spatial 单特征 AUROC | FPR95 | AUROC | ΔFPR95 |
+| G | patches per region | uniform | Spatial single-feature AUROC | FPR95 | AUROC | ΔFPR95 |
 |---|---|---|---|---|---|---|
-| 2 | 49 | 是 | 61.55 | 27.89±1.38 | 93.74±0.28 | -1.39 |
-| 3 | 不等 | 否 | 68.63 | 27.52±1.61 | 93.82±0.28 | -1.76 |
-| 4 | 不等 | 否 | 72.52 | 26.95±1.70 | 94.00±0.26 | -2.32 |
-| 5 | 不等 | 否 | 76.55 | 26.90±1.42 | 94.05±0.25 | -2.38 |
-| 6 | 不等 | 否 | 77.21 | 26.15±1.54 | 94.14±0.26 | -3.12 |
-| 7 | 4 | 是 | 80.66 | 25.72±1.57 | 94.18±0.26 | -3.56 |
-| 8 | 不等 | 否 | 83.39 | 26.23±1.60 | 94.19±0.24 | -3.05 |
-| 10 | 不等 | 否 | 84.46 | 25.95±1.64 | 94.25±0.24 | -3.32 |
-| 14 | 1 | 是 | 50.00 | 27.88±1.15 | 93.88±0.24 | -1.39 |
+| 2 | 49 | yes | 61.55 | 27.89±1.38 | 93.74±0.28 | -1.39 |
+| 3 | unequal | no | 68.63 | 27.52±1.61 | 93.82±0.28 | -1.76 |
+| 4 | unequal | no | 72.52 | 26.95±1.70 | 94.00±0.26 | -2.32 |
+| 5 | unequal | no | 76.55 | 26.90±1.42 | 94.05±0.25 | -2.38 |
+| 6 | unequal | no | 77.21 | 26.15±1.54 | 94.14±0.26 | -3.12 |
+| 7 | 4 | yes | 80.66 | 25.72±1.57 | 94.18±0.26 | -3.56 |
+| 8 | unequal | no | 83.39 | 26.23±1.60 | 94.19±0.24 | -3.05 |
+| 10 | unequal | no | 84.46 | 25.95±1.64 | 94.25±0.24 | -3.32 |
+| 14 | 1 | yes | 50.00 | 27.88±1.15 | 93.88±0.24 | -1.39 |

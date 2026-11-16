@@ -1,6 +1,6 @@
-# zero-shot 箱线图 2x4（行=指标，列=ID 数据集）
+# zero-shot box plots 2x4 (rows=metrics, columns=ID datasets)
 
-| ID 数据集 | 指标 | median ID | iNat | SUN | Plac | Text | AUROC(4 集平均) |
+| ID dataset | metric | median ID | iNat | SUN | Plac | Text | AUROC(4-set mean) |
 |---|---|---|---|---|---|---|---|
 | IN-500-Hard | Global JS | 0.3740 | 0.2878 | 0.2979 | 0.3062 | 0.3163 | 84.01 |
 | IN-500-Hard | Spatial (JS-std) | 0.0599 | 0.0399 | 0.0473 | 0.0490 | 0.0422 | 82.88 |

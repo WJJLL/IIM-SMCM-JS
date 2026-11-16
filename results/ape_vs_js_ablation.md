@@ -1,23 +1,23 @@
-# Global JS vs. patch-uncertainty 消融
+# Global JS vs. patch-uncertainty ablation
 
-IIM base，**ImageNet-500-Hard** 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD 集，只叠加 Global JS 这一路（不加 spatial）。
+IIM base, **ImageNet-500-Hard** as ID, 4-shot, seeds [1, 2, 3], 4 OOD sets, adding only the Global JS branch (no spatial term).
 
-三个候选统计量（括号内为同义写法）：
-- `js`（Global JS）= H(π̄) − (1/P)Σ H(π_p)：跨 patch 分布异质性（本文）
-- `ape`（Average Patch Entropy）= (1/P)Σ H(π_p)：单 patch 平均预测熵
-- `hq`（Global Prediction Entropy）= H(π̄)：平均预测的熵，恒等于 js + ape
+Three candidate statistics (equivalent notation in parentheses):
+- `js` (Global JS) = H(π̄) − (1/P)Σ H(π_p): cross-patch distribution heterogeneity (this work)
+- `ape` (Average Patch Entropy) = (1/P)Σ H(π_p): mean predictive entropy of a single patch
+- `hq` (Global Prediction Entropy) = H(π̄): entropy of the mean prediction, identically equal to js + ape
 
-定标只用 ID：coef = γ·std_ID(base)/std_ID(stat)，S = base + coef·(stat − mean_ID(stat))；γ=0 即 S-MCM 基座。
+Calibration uses ID only: coef = γ·std_ID(base)/std_ID(stat), S = base + coef·(stat − mean_ID(stat)); γ=0 gives the S-MCM base.
 
-## 单特征 AUROC（不融合 base，3 seed 均值，已取该统计量最佳方向）
+## Single-feature AUROC (base not fused, mean over 3 seeds, best direction taken for each statistic)
 
-| 统计量 | 最佳方向 | 4-OOD 平均 | iNaturalist | SUN | places365 | Texture |
+| statistic | best direction | 4-OOD mean | iNaturalist | SUN | places365 | Texture |
 |---|---|---|---|---|---|---|
-| Global JS (ours) | 越大越像 ID | **84.55** | 89.45 | 85.21 | 82.52 | 81.01 |
-| Average Patch Entropy | 越大越像 OOD | **80.53** | 92.23 | 83.19 | 81.66 | 65.04 |
-| Global Prediction Entropy | 越大越像 OOD | **58.32** | 71.08 | 60.23 | 61.89 | 40.09 |
+| Global JS (ours) | larger = more ID-like | **84.55** | 89.45 | 85.21 | 82.52 | 81.01 |
+| Average Patch Entropy | larger = more OOD-like | **80.53** | 92.23 | 83.19 | 81.66 | 65.04 |
+| Global Prediction Entropy | larger = more OOD-like | **58.32** | 71.08 | 60.23 | 61.89 | 40.09 |
 
-## γ 扫描（FPR95 ↓ / AUROC ↑，均值±标准差 over seeds）
+## γ sweep (FPR95 ↓ / AUROC ↑, mean±std over seeds)
 
 ### Global JS (ours)
 
@@ -67,34 +67,34 @@ IIM base，**ImageNet-500-Hard** 作 ID，4-shot，seeds [1, 2, 3]，4 个 OOD �
 | 0.9 | 45.75±5.83 | 87.01±1.32 |
 | 1.0 | 47.73±6.26 | 86.24±1.46 |
 
-## 汇总
+## Summary
 
-| 统计量 | 最优 γ | FPR95 | AUROC | ΔFPR95 |
+| statistic | best γ | FPR95 | AUROC | ΔFPR95 |
 |---|---|---|---|---|
-| 基座 S-MCM | 0.0 | 29.28±1.48 | 93.33±0.20 | — |
+| base S-MCM | 0.0 | 29.28±1.48 | 93.33±0.20 | — |
 | Global JS (ours) | 0.2 | 27.74±1.19 | 93.84±0.23 | -1.54 |
 | Average Patch Entropy | 0.1 | 29.56±1.68 | 93.14±0.25 | +0.28 |
 | Global Prediction Entropy | 0.1 | 30.38±1.78 | 92.85±0.26 | +1.10 |
 
-## 逐 OOD 集 FPR95（各自最优 γ）
+## FPR95 per OOD dataset (each at its own best γ)
 
-| 统计量 | iNaturalist | SUN | places365 | Texture |
+| statistic | iNaturalist | SUN | places365 | Texture |
 |---|---|---|---|---|
 | Global JS (ours) (γ=0.2) | 11.34 | 26.09 | 33.05 | 40.48 |
 | Average Patch Entropy (γ=0.1) | 11.80 | 27.40 | 34.28 | 44.78 |
 | Global Prediction Entropy (γ=0.1) | 12.41 | 28.24 | 34.98 | 45.90 |
 
-## 方向检查（sgn 取反，对基线更有利的一侧）
+## Direction check (sgn flipped, i.e. the side more favourable to the baseline)
 
-| 统计量 | sgn | 最优 γ | FPR95 | AUROC |
+| statistic | sgn | best γ | FPR95 | AUROC |
 |---|---|---|---|---|
 | Global JS (ours) | +1 | 0.1 | 31.15 | 92.76 |
 | Average Patch Entropy | -1 | 0.1 | 29.08 | 93.41 |
 | Global Prediction Entropy | -1 | 0.2 | 28.06 | 93.83 |
 
-## 两种方向里的最好结果（对基线最有利）
+## Best result across the two directions (most favourable to the baseline)
 
-| 统计量 | 最优 γ | sgn | FPR95 | ΔFPR95 vs 基座 |
+| statistic | best γ | sgn | FPR95 | ΔFPR95 vs base |
 |---|---|---|---|---|
 | Global JS (ours) | 0.2 | -1 | 27.74 | -1.54 |
 | Average Patch Entropy | 0.1 | -1 | 29.08 | -0.21 |

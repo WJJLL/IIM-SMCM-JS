@@ -1,14 +1,14 @@
-# IIM base 4-shot：4 个基座 + JS-Spatial（γ=0.5、α_spatial=0.5）
+# IIM base 4-shot: 4 bases + JS-Spatial (γ=0.5, α_spatial=0.5)
 
-**记录点**：`/mnt/mydrive/iim/output`，`base_4shots` / `new_4shots` / `all_4shots`  
-**超参**：`JS_GAMMA=0.5`、`JS_SPATIAL_A=0.5`、`JS_SPATIAL_GRID=7`  
-**随机种子**：[1, 2, 3]  
-**指标**：FPR@95TPR（%↓） / AUROC（%↑），4 个 OOD 集平均  
-**加速**：图像每 seed 只前向一次，分量落盘后离线重算，不重复跑模型
+**Logged under**: `/mnt/mydrive/iim/output`, `base_4shots` / `new_4shots` / `all_4shots`  
+**Hyperparameters**: `JS_GAMMA=0.5`, `JS_SPATIAL_A=0.5`, `JS_SPATIAL_GRID=7`  
+**Seeds**: [1, 2, 3]  
+**Metric**: FPR@95TPR (%↓) / AUROC (%↑), mean over the 4 OOD sets  
+**Speed-up**: each image is forwarded once per seed; the components are dumped to disk and re-scored offline, without re-running the model
 
 ## ImageNet-500-Hard
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|--------------|--------------|--------------|--------------|--------------------|
 | MCM | 30.22 | 50.47 | 50.46 | 63.16 | 48.58±0.00 / 88.72 |
 | **MCM-JS-Spatial** | 12.38 | 32.12 | 36.66 | 39.44 | **30.15±0.88 / 93.22** |
@@ -21,7 +21,7 @@
 
 ## ImageNet-500-Easy
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|--------------|--------------|--------------|--------------|--------------------|
 | MCM | 14.73 | 8.19 | 14.89 | 20.27 | 14.52±0.00 / 97.01 |
 | **MCM-JS-Spatial** | 3.85 | 4.97 | 11.80 | 10.89 | **7.88±0.05 / 98.08** |
@@ -34,7 +34,7 @@
 
 ## ImageNet-100
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **mean over the 4 OOD sets** |
 |--------------------|--------------|--------------|--------------|--------------|--------------------|
 | MCM | 11.86 | 29.43 | 28.80 | 37.54 | 26.91±0.00 / 95.18 |
 | **MCM-JS-Spatial** | 1.91 | 13.08 | 16.47 | 16.06 | **11.88±0.42 / 97.72** |
@@ -45,9 +45,9 @@
 | S-MCM | 2.64 | 10.16 | 15.41 | 14.86 | 10.77±0.67 / 97.72 |
 | **S-MCM-JS-Spatial** | 1.61 | 9.42 | 15.73 | 9.80 | **9.14±0.22 / 98.05** |
 
-## JS-Spatial 增益（4 集平均，3 seed 均值）
+## JS-Spatial gain (mean over the 4 OOD sets, 3-seed mean)
 
-| ID 数据集 | 基座 | 原始 FPR95 | +JS-Spatial | ΔFPR | ΔAUROC |
+| ID dataset | base | original FPR95 | +JS-Spatial | ΔFPR | ΔAUROC |
 |---|---|---|---|---|---|
 | ImageNet-500-Hard | MCM | 48.58 | 30.15 | **-18.43** | +4.50 |
 | ImageNet-500-Hard | GL-MCM | 41.33 | 32.29 | **-9.04** | +2.65 |
@@ -62,9 +62,9 @@
 | ImageNet-100 | R-MCM | 19.37 | 10.24 | **-9.12** | +1.53 |
 | ImageNet-100 | S-MCM | 10.77 | 9.14 | **-1.63** | +0.33 |
 
-## 逐 seed 配对（JS-Spatial 是否在 3/3 seed 上都更好）
+## Per-seed pairing (is JS-Spatial better on all 3/3 seeds?)
 
-| ID 数据集 | 基座 | seed1 | seed2 | seed3 | 胜率 |
+| ID dataset | base | seed1 | seed2 | seed3 | win rate |
 |---|---|---|---|---|---|
 | ImageNet-500-Hard | MCM | -17.82 | -19.43 | -18.03 | 3/3 |
 | ImageNet-500-Hard | GL-MCM | -8.77 | -8.79 | -9.55 | 3/3 |

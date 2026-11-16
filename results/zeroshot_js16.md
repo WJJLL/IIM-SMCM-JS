@@ -1,60 +1,60 @@
-# zero-shot CLIP：4 个 ID 数据集 × 4 个 OOD 集，16 条分数
+# zero-shot CLIP: 4 ID datasets × 4 OOD sets, 16 scores
 
-- IIM/ZeroShot 均不训练，CLIP ViT-B/16，`top_k=50, T=1, alpha=1.0`
-- 指标：**FPR@95TPR（%↓） / AUROC（%↑）**
-- JS / Spatial 的 `coef` 与 `mu` 只用 **ID 集** 标定（与 IIM 口径一致）
-- 注意：Easy / Hard 的原始日志额外把 ImageNet-1k 当第 5 个 OOD 集，其末尾 `avg.` 是 5 集平均；本文所有数字均为**重算的 4 集平均**
+- Neither IIM nor ZeroShot is trained; CLIP ViT-B/16, `top_k=50, T=1, alpha=1.0`
+- Metrics: **FPR@95TPR (%↓) / AUROC (%↑)**
+- The `coef` and `mu` of JS / Spatial are calibrated **on the ID set only** (same protocol as IIM)
+- Note: the raw logs of Easy / Hard additionally treat ImageNet-1k as a 5th OOD set, so their trailing `avg.` is a 5-set mean; every number in this report is a **recomputed 4-set mean**
 
-## 每个数据集的最优分数
+## Best score per dataset
 
-| ID 数据集 | 最优 score | FPR95 | AUROC | 相对该基座的原始分数 |
+| ID dataset | best score | FPR95 | AUROC | relative to the original score of that base |
 |---|---|---|---|---|
-| ImageNet-1k | **R-MCM-JS-Spatial** | **31.50** | 92.28 | -3.24（R-MCM 34.74） |
-| ImageNet-500-Hard | **R-MCM-JS-Spatial** | **36.89** | 91.09 | -3.90（R-MCM 40.79） |
-| ImageNet-100 | **GL-MCM-JS-Spatial** | **15.49** | 96.64 | -2.94（GL-MCM 18.42） |
-| ImageNet-500-Easy | **R-MCM-JS-Spatial** | **10.20** | 97.43 | -1.66（R-MCM 11.87） |
+| ImageNet-1k | **R-MCM-JS-Spatial** | **31.50** | 92.28 | -3.24 (R-MCM 34.74) |
+| ImageNet-500-Hard | **R-MCM-JS-Spatial** | **36.89** | 91.09 | -3.90 (R-MCM 40.79) |
+| ImageNet-100 | **GL-MCM-JS-Spatial** | **15.49** | 96.64 | -2.94 (GL-MCM 18.42) |
+| ImageNet-500-Easy | **R-MCM-JS-Spatial** | **10.20** | 97.43 | -1.66 (R-MCM 11.87) |
 
-## 各基座的增强效果（4 集平均 FPR95，括号内为 Δ）
+## Effect of the enhancement per base (4-set mean FPR95, Δ in parentheses)
 
 #### MCM
 
-| 基座 | 变体 | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
+| base | variant | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
 |----------|--------------|----------------|----------------|----------------|----------------|
-| MCM | 原始 | 42.26 | 48.59 | 30.18 | 14.79 |
+| MCM | original | 42.26 | 48.59 | 30.18 | 14.79 |
 |  | -JS | 34.17 (-8.09) | 38.77 (-9.82) | 19.43 (-10.75) | 10.98 (-3.81) |
 |  | -Spatial | 34.95 (-7.31) | 39.56 (-9.03) | 20.46 (-9.72) | 10.86 (-3.93) |
 |  | -JS-Spatial | 34.13 (-8.14) | 38.96 (-9.63) | 19.78 (-10.40) | 10.71 (-4.08) |
 
 #### GL-MCM
 
-| 基座 | 变体 | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
+| base | variant | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
 |----------|--------------|----------------|----------------|----------------|----------------|
-| GL-MCM | 原始 | 35.24 | 41.54 | 18.42 | 13.54 |
+| GL-MCM | original | 35.24 | 41.54 | 18.42 | 13.54 |
 |  | -JS | 32.75 (-2.50) | 37.91 (-3.63) | 15.68 (-2.74) | 12.29 (-1.25) |
 |  | -Spatial | 32.26 (-2.99) | 37.78 (-3.76) | 16.16 (-2.27) | 11.78 (-1.76) |
 |  | -JS-Spatial | 32.10 (-3.14) | 37.58 (-3.96) | 15.49 (-2.94) | 11.94 (-1.61) |
 
 #### R-MCM
 
-| 基座 | 变体 | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
+| base | variant | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
 |----------|--------------|----------------|----------------|----------------|----------------|
-| R-MCM | 原始 | 34.74 | 40.79 | 21.05 | 11.87 |
+| R-MCM | original | 34.74 | 40.79 | 21.05 | 11.87 |
 |  | -JS | 31.61 (-3.14) | 36.93 (-3.87) | 16.11 (-4.94) | 10.51 (-1.36) |
 |  | -Spatial | 31.87 (-2.87) | 37.05 (-3.74) | 17.02 (-4.04) | 10.20 (-1.66) |
 |  | -JS-Spatial | 31.50 (-3.24) | 36.89 (-3.90) | 16.12 (-4.93) | 10.20 (-1.66) |
 
 #### S-MCM
 
-| 基座 | 变体 | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
+| base | variant | ImageNet-1k | ImageNet-500-Hard | ImageNet-100 | ImageNet-500-Easy |
 |----------|--------------|----------------|----------------|----------------|----------------|
-| S-MCM | 原始 | 37.12 | 43.55 | 20.02 | 13.54 |
+| S-MCM | original | 37.12 | 43.55 | 20.02 | 13.54 |
 |  | -JS | 35.82 (-1.30) | 40.88 (-2.67) | 17.71 (-2.31) | 13.25 (-0.28) |
 |  | -Spatial | 34.37 (-2.75) | 39.93 (-3.61) | 16.99 (-3.03) | 12.19 (-1.35) |
 |  | -JS-Spatial | 34.80 (-2.32) | 40.31 (-3.24) | 17.17 (-2.84) | 12.61 (-0.92) |
 
-### ImageNet-1k（逐 OOD 集 + 4 集平均，FPR95 / AUROC）
+### ImageNet-1k (per OOD set + 4-set mean, FPR95 / AUROC)
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **4-set mean** |
 |--------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM                | 30.70 / 94.63 | 37.40 / 92.57 | 43.66 / 89.96 | 57.29 / 86.18 | **42.26 / 90.83** |
 | MCM-JS             | 20.64 / 96.10 | 28.80 / 94.19 | 36.85 / 91.39 | 50.41 / 88.13 | **34.17 / 92.45** |
@@ -73,9 +73,9 @@
 | S-MCM-Spatial      | 14.48 / 96.76 | 29.92 / 93.28 | 39.94 / 89.59 | 53.12 / 85.74 | **34.37 / 91.34** |
 | S-MCM-JS-Spatial   | 15.39 / 96.60 | 29.67 / 93.45 | 39.69 / 89.83 | 54.43 / 85.10 | **34.80 / 91.25** |
 
-### ImageNet-500-Hard（逐 OOD 集 + 4 集平均，FPR95 / AUROC）
+### ImageNet-500-Hard (per OOD set + 4-set mean, FPR95 / AUROC)
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **4-set mean** |
 |--------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM                | 28.85 / 94.34 | 52.68 / 89.30 | 51.32 / 88.91 | 61.52 / 83.31 | **48.59 / 88.97** |
 | MCM-JS             | 19.09 / 96.16 | 39.77 / 91.74 | 41.96 / 90.91 | 54.26 / 85.95 | **38.77 / 91.19** |
@@ -94,9 +94,9 @@
 | S-MCM-Spatial      | 18.92 / 95.95 | 40.71 / 90.79 | 45.71 / 88.77 | 54.40 / 85.35 | **39.93 / 90.22** |
 | S-MCM-JS-Spatial   | 19.58 / 95.88 | 39.89 / 91.12 | 45.36 / 89.18 | 56.40 / 84.89 | **40.31 / 90.27** |
 
-### ImageNet-100（逐 OOD 集 + 4 集平均，FPR95 / AUROC）
+### ImageNet-100 (per OOD set + 4-set mean, FPR95 / AUROC)
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **4-set mean** |
 |--------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM                | 13.29 / 97.39 | 36.38 / 94.86 | 32.73 / 94.86 | 38.32 / 93.34 | **30.18 / 95.11** |
 | MCM-JS             | 5.01 / 98.61 | 21.89 / 96.62 | 22.08 / 96.28 | 28.72 / 94.89 | **19.43 / 96.60** |
@@ -115,9 +115,9 @@
 | S-MCM-Spatial      | 2.57 / 99.04 | 15.48 / 96.84 | 19.22 / 95.99 | 30.69 / 93.31 | **16.99 / 96.30** |
 | S-MCM-JS-Spatial   | 2.80 / 98.99 | 15.29 / 96.94 | 19.17 / 96.11 | 31.44 / 93.27 | **17.17 / 96.33** |
 
-### ImageNet-500-Easy（逐 OOD 集 + 4 集平均，FPR95 / AUROC）
+### ImageNet-500-Easy (per OOD set + 4-set mean, FPR95 / AUROC)
 
-| score | iNaturalist | SUN | places365 | Texture | **4 集平均** |
+| score | iNaturalist | SUN | places365 | Texture | **4-set mean** |
 |--------------------|-----------------|-----------------|-----------------|-----------------|------------------|
 | MCM                | 16.04 / 97.13 | 8.10 / 98.28 | 15.26 / 96.21 | 19.75 / 96.27 | **14.79 / 96.97** |
 | MCM-JS             | 9.15 / 98.01 | 5.72 / 98.71 | 12.80 / 96.76 | 16.24 / 96.79 | **10.98 / 97.57** |

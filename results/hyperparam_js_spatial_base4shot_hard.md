@@ -1,15 +1,15 @@
-# base 4-shot：JS / Spatial 超参数分析（tag=`.hard_w0`，seeds=[1, 2, 3]，4 个 OOD 集平均）
+# base 4-shot: JS / Spatial hyperparameter analysis (tag=`.hard_w0`, seeds=[1, 2, 3], mean over the 4 OOD sets)
 
-## 0. 基座复现（离线 vs 线上）
+## 0. Reproducing the base (offline vs online)
 
 | seed | S-MCM FPR95 | S-MCM AUROC |
 |---|---|---|
 | 1 | 29.74 | 93.16 |
 | 2 | 27.63 | 93.55 |
 | 3 | 30.48 | 93.27 |
-| **均值±std** | 29.28±1.48 | 93.33±0.20 |
+| **mean±std** | 29.28±1.48 | 93.33±0.20 |
 
-## 1. γ 扫描（a=0.5、g=7 固定）
+## 1. γ sweep (a=0.5, g=7 fixed)
 
 | γ | FPR95 | AUROC |
 |---|---|---|
@@ -25,9 +25,9 @@
 | 0.75 | 25.95±1.57 | 94.17±0.30 |
 | 1.0 | 26.59±1.93 | 94.05±0.34 |
 
-## 2. a 扫描（γ=0.2、g=7 固定）
+## 2. a sweep (γ=0.2, g=7 fixed)
 
-| a（JS 占比） | FPR95 | AUROC |
+| a (JS share) | FPR95 | AUROC |
 |---|---|---|
 | 0.0 | 26.92±1.70 | 93.67±0.23 |
 | 0.1 | 26.78±1.66 | 93.74±0.23 |
@@ -41,7 +41,7 @@
 | 0.9 | 27.47±1.26 | 93.87±0.23 |
 | 1.0 | 27.74±1.19 | 93.84±0.23 |
 
-## 3. 空间网格 g 扫描（γ=0.2、a=0.5 固定）
+## 3. Spatial-grid g sweep (γ=0.2, a=0.5 fixed)
 
 | g | FPR95 | AUROC |
 |---|---|---|
@@ -50,7 +50,7 @@
 | 7 | 26.86±1.39 | 93.90±0.22 **←** |
 | 10 | 26.80±1.41 | 93.95±0.21 |
 
-## 4. γ × a 二维（FPR95）
+## 4. Two-dimensional γ × a (FPR95)
 
 | γ \ a | 0.0 | 0.25 | 0.5 | 0.75 | 1.0 |
 |---|----------|----------|----------|----------|----------|
@@ -60,18 +60,18 @@
 | **0.3** | 26.72 | 26.14 | 26.27 | 26.82 | 28.00 |
 | **0.5** | 27.49 | 26.09 | 25.71 | 26.87 | 29.19 |
 
-## 5. 留一 OOD 集选 γ（证明 γ 不是在 OOD 上调出来的）
+## 5. Choosing γ by leave-one-OOD-dataset (showing that γ is not tuned on OOD)
 
-| 留出的 OOD 集 | 其余 3 集选出的 γ* | 该集在 γ* 上的 FPR95 | 该集在 γ=0 的 FPR95 |
+| held-out OOD dataset | γ* chosen on the other 3 sets | FPR95 of that set at γ* | FPR95 of that set at γ=0 |
 |---|---|---|---|
 | iNaturalist | 0.5 | 9.11 | 12.55 |
 | SUN | 0.75 | 28.14 | 27.30 |
 | places365 | 0.75 | 35.59 | 34.43 |
 | Texture | 0.3 | 35.42 | 42.84 |
 
-## 6. 逐 OOD 集拆解（γ 扫描，a=0.5、g=7）
+## 6. Per-OOD breakdown (γ sweep, a=0.5, g=7)
 
-| γ | iNaturalist | SUN | places365 | Texture | AUROC(4集) |
+| γ | iNaturalist | SUN | places365 | Texture | AUROC (4 sets) |
 |---|--------------|--------------|--------------|--------------|---|
 | 0.0 | 12.55 | 27.30 | 34.43 | 42.84 | 93.33 |
 | 0.1 | 11.26 | 26.45 | 33.75 | 39.66 | 93.67 |
@@ -80,26 +80,26 @@
 | 0.5 | 9.11 | 26.85 | 34.08 | 32.81 | 94.18 |
 | 1.0 | 9.11 | 29.80 | 37.28 | 30.17 | 94.05 |
 
-## 7. 两个分项各自单独 / 合并（γ=0.2、g=7）
+## 7. The two components separately / combined (γ=0.2, g=7)
 
-| 配置 | FPR95 | AUROC | ΔFPR vs 基座 |
+| configuration | FPR95 | AUROC | ΔFPR vs base |
 |---|---|---|---|
-| 基座 S-MCM | 29.28 | 93.33 |  |
-| 仅 JS (a=1) | 27.74 | 93.84 | -1.54 |
-| 仅 Spatial (a=0) | 26.92 | 93.67 | -2.36 |
+| base S-MCM | 29.28 | 93.33 |  |
+| JS only (a=1) | 27.74 | 93.84 | -1.54 |
+| Spatial only (a=0) | 26.92 | 93.67 | -2.36 |
 | JS+Spatial (a=0.5) | 26.86 | 93.90 | -2.42 |
 
-## 8. LOOCV 的诚实估计
+## 8. Honest LOOCV estimate
 
-在每个留出集上，用其余 3 集选 γ*，再在该集上测：
+For each held-out set, γ* is chosen on the other 3 sets and then measured on that set:
 
-| 留出集 | γ* | 该集 FPR95@γ* | 该集 FPR95@γ=0 |
+| held-out set | γ* | FPR95@γ* on that set | FPR95@γ=0 on that set |
 |---|---|---|---|
 | iNaturalist | 0.5 | 9.11 | 12.55 |
 | SUN | 0.75 | 28.14 | 27.30 |
 | places365 | 0.75 | 35.59 | 34.43 |
 | Texture | 0.3 | 35.42 | 42.84 |
-| **平均** | — | **27.06** | **29.28** |
+| **mean** | — | **27.06** | **29.28** |
 
-- LOOCV 诚实估计 **27.06**；固定 γ=0.2 是 **26.86**；固定 γ=0.5 是 **25.71**（但这是看了 OOD 才选的）。
-- 结论：**用 OOD 选出的 γ 并不能可靠迁移**（SUN / places365 在 γ*>0.2 时反而变差），因此只用 ID 统计量定 γ（=0.2）是更稳、且可辩护的做法。
+- The honest LOOCV estimate is **27.06**; fixing γ=0.2 gives **26.86**; fixing γ=0.5 gives **25.71** (but this one was chosen after looking at OOD).
+- Findings: **a γ chosen on OOD does not transfer reliably** (SUN / places365 actually get worse at γ*>0.2), so setting γ from ID statistics only (=0.2) is the more stable and more defensible choice.

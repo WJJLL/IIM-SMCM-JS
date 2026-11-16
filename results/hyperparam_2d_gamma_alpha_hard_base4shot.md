@@ -1,38 +1,38 @@
-# S-MCM-JS-Spatial 的 (γ, α) 二维超参数网格
+# Two-dimensional (γ, α) hyperparameter grid for S-MCM-JS-Spatial
 
-**ID 数据**：ImageNet-500-Hard（`ImageNet-500-Hard/new_4shots`，`part=new`，base 方法，4-shot）  
-**OOD 数据**：iNaturalist / SUN / places365 / Texture（4 集平均）  
-**随机种子**：[1, 2, 3]  
-**空间网格**：g = 7（14×14 patch → 7×7 自适应池化）  
-**网格步长**：γ 与 α 均为 [0, 1] 步长 0.1（11 × 11 = 121 个配置）
+**ID data**: ImageNet-500-Hard (`ImageNet-500-Hard/new_4shots`, `part=new`, base method, 4-shot)  
+**OOD data**: iNaturalist / SUN / places365 / Texture (mean over the 4 OOD sets)  
+**Seeds**: [1, 2, 3]  
+**Spatial grid**: g = 7 (14×14 patches → 7×7 adaptive pooling)  
+**Grid step**: γ and α both in [0, 1] with step 0.1 (11 × 11 = 121 configurations)
 
-## 参数含义
+## Parameter meaning
 
-| 符号 | 含义 | 代码 |
+| symbol | meaning | code |
 |---|---|---|
-| **γ** | 辅助项总预算：JS 与 Spatial 在 ID 上的波动幅度合计为 γ·σ_ID(S-MCM) | `JS_GAMMA` |
-| **α** | **Spatial 项**的预算占比（JS 占 1−α） | `JS_SPATIAL_A = 1 − α` |
+| **γ** | total budget of the auxiliary terms: the combined fluctuation of JS and Spatial on ID is γ·σ_ID(S-MCM) | `JS_GAMMA` |
+| **α** | share of the budget taken by the **Spatial term** (JS takes 1−α) | `JS_SPATIAL_A = 1 − α` |
 
 $$\mathrm{coef}_{js}=(1-\alpha)\,\gamma\,\frac{\sigma_{ID}(S_{MCM})}{\sigma_{ID}(JS)}\qquad \mathrm{coef}_{sp}=\alpha\,\gamma\,\frac{\sigma_{ID}(S_{MCM})}{\sigma_{ID}(JS_{std})}$$
 
 $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std}-\mu_{sp})$$
 
-`(coef, μ)` 全部只用 **ID 集**标定，不接触任何 OOD 数字；分数越小越像 ID。
+`(coef, μ)` are calibrated on the **ID set** only and never touch any OOD number; smaller scores are more ID-like.
 
-## 加速说明
+## Speed-up
 
-图像特征**每个 seed 只前向一次**（ID 25,000 + 4 个 OOD 集 35,640 = 60,640 张/seed），逐样本分量已落盘。本表的 121 × 3 = 363 次评测全部在 CPU 上重算，不占 GPU、不重跑模型。
+The image features are **forwarded only once per seed** (ID 25,000 + 4 OOD sets 35,640 = 60,640 images/seed), and the per-sample components were dumped to disk. All 121 × 3 = 363 evaluations in this table were recomputed on CPU; the GPU is not used and the model is not re-run.
 
-## 0. 基座（γ = 0，与 α 无关）
+## 0. Base (γ = 0, independent of α)
 
 | seed | S-MCM FPR95 | S-MCM AUROC |
 |---|---|---|
 | 1 | 29.74 | 93.16 |
 | 2 | 27.63 | 93.55 |
 | 3 | 30.48 | 93.27 |
-| **均值±std** | 29.28±1.48 | 93.33±0.20 |
+| **mean±std** | 29.28±1.48 | 93.33±0.20 |
 
-## 1. FPR95 全网格（%↓，seed 均值）
+## 1. Full FPR95 grid (%↓, seed mean)
 
 | γ \ α | 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -48,9 +48,9 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | **0.9** | 32.72 | 30.65 | 28.81 | 27.64 | 26.81 | 26.18 | 26.31 | 26.68 | 27.63 | 28.84 | 30.57 |
 | **1.0** | 33.66 | 31.46 | 29.41 | 28.08 | 27.12 | 26.59 | 26.58 | 27.05 | 28.17 | 29.46 | 31.47 |
 
-> 加粗 = 线上默认 (γ=0.2, α=0.5) → 26.86；全网格最优 (γ=0.6, α=0.6) → **25.66**
+> Bold = online default (γ=0.2, α=0.5) → 26.86; grid optimum (γ=0.6, α=0.6) → **25.66**
 
-## 2. AUROC 全网格（%↑，seed 均值）
+## 2. Full AUROC grid (%↑, seed mean)
 
 | γ \ α | 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0 |
 |---|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
@@ -66,13 +66,13 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | **0.9** | 93.15 | 93.54 | 93.84 | 94.04 | 94.13 | 94.11 | 93.97 | 93.72 | 93.35 | 92.86 | 92.26 |
 | **1.0** | 92.96 | 93.41 | 93.75 | 93.97 | 94.07 | 94.05 | 93.90 | 93.61 | 93.19 | 92.64 | 91.96 |
 
-> 全网格 AUROC 最优 (γ=0.6, α=0.4) → **94.22**
+> Grid AUROC optimum (γ=0.6, α=0.4) → **94.22**
 
-## 3. 边际曲线
+## 3. Marginal curves
 
-### 3.1 固定 α = 0.5，扫 γ
+### 3.1 Fixed α = 0.5, sweeping γ
 
-| γ | FPR95 | AUROC | ΔFPR vs 基座 |
+| γ | FPR95 | AUROC | ΔFPR vs base |
 |---|---|---|---|
 | 0.0 | 29.28 | 93.33 | +0.00 |
 | 0.1 | 27.78 | 93.67 | -1.50 |
@@ -86,9 +86,9 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | 0.9 | 26.18 | 94.11 | -3.11 |
 | 1.0 | 26.59 | 94.05 | -2.69 |
 
-### 3.2 固定 γ = 0.2，扫 α
+### 3.2 Fixed γ = 0.2, sweeping α
 
-| α（Spatial 占比） | FPR95 | AUROC |
+| α (Spatial share) | FPR95 | AUROC |
 |---|---|---|
 | 0.0 | 27.74 | 93.84 |
 | 0.1 | 27.47 | 93.87 |
@@ -102,9 +102,9 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | 0.9 | 26.78 | 93.74 |
 | 1.0 | 26.92 | 93.67 |
 
-### 3.3 固定 γ = 0.6（FPR95 最优带），扫 α
+### 3.3 Fixed γ = 0.6 (best FPR95 band), sweeping α
 
-| α（Spatial 占比） | FPR95 | AUROC |
+| α (Spatial share) | FPR95 | AUROC |
 |---|---|---|
 | 0.0 | 29.87 | 93.65 |
 | 0.1 | 28.63 | 93.89 |
@@ -118,11 +118,11 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | 0.9 | 27.16 | 93.45 |
 | 1.0 | 28.20 | 93.09 |
 
-## 4. 不差于默认配置的区域
+## 4. Region no worse than the default configuration
 
-满足 FPR95 ≤ 26.86（默认 γ=0.2, α=0.5）的格子共 **48/121** 个：
+Cells with FPR95 ≤ 26.86 (default γ=0.2, α=0.5) number **48/121**:
 
-| γ | α 区间 |
+| γ | α interval |
 |---|---|
 | 0.2 | 0.5 – 0.9 |
 | 0.3 | 0.3 – 1.0 |
@@ -134,12 +134,12 @@ $$S = S_{MCM} - \mathrm{coef}_{js}\,(JS-\mu_{JS}) - \mathrm{coef}_{sp}\,(JS_{std
 | 0.9 | 0.4 – 0.7 |
 | 1.0 | 0.5 – 0.6 |
 
-## 5. 关键观察
+## 5. Key observations
 
-1. **α = 0.5 附近最稳。** γ=0.2 时 α 从 0.3 到 0.7 的 FPR95 是 26.75–27.00，几乎是一条平线；两端（纯 JS 或纯 Spatial）变差。两个分项都必要。
-   - 细看：γ=0.2 这一行 FPR95 的最低点在 α=0.8（26.68），而 AUROC 的最高点在 α=0.4–0.5（93.91）。两者取向略有冲突，**α=0.5 是同时兼顾 FPR95 与 AUROC 的折中点**，因此线上取 0.5。
-2. **γ 是主要敏感方向。** 固定 α=0.5，FPR95 从 γ=0 的 29.28 单调降到 γ=0.6 的 25.70，再抬头。默认 γ=0.2 给出 26.86。
-3. **大 γ 时纯 JS 会崩。** α=0（纯 JS）在 γ=1.0 时 FPR95 = 33.66，比基座 29.28 还差；而 α=0.5 在 γ=1.0 时是 26.59。说明 Spatial 项起到「稳住大预算」的作用。
-4. **默认 γ=0.2 是保守但可辩护的点。** 它由「辅助项扰动 ≤ 20% σ_ID」这条只看 ID 的准则给出；见 `hyperparam_js_spatial_base4shot_hard.md` 的留一 OOD 集检验——用 OOD 选出的更大 γ 并不能跨集迁移。
-5. **稳健区很大。** 121 个格子里有 **48 个** FPR95 不差于默认点，且集中在 γ∈[0.3, 0.8] × α∈[0.3, 0.9] 的连续片状区域内（不是孤立尖峰），说明方法对超参不敏感。若论文空间允许，可把主结果同时给出 γ=0.2（ID 准则）与 γ=0.5 两栏。
+1. **Most stable around α = 0.5.** At γ=0.2 the FPR95 for α from 0.3 to 0.7 is 26.75–27.00, almost a flat line; both ends (pure JS or pure Spatial) degrade. Both components are necessary.
+   - Closer look: in the γ=0.2 row the FPR95 minimum sits at α=0.8 (26.68), while the AUROC maximum sits at α=0.4–0.5 (93.91). The two preferences conflict slightly; **α=0.5 is the compromise that serves FPR95 and AUROC at the same time**, so the online version takes 0.5.
+2. **γ is the main sensitive direction.** With α=0.5 fixed, FPR95 decreases monotonically from 29.28 at γ=0 to 25.70 at γ=0.6, then rises again. The default γ=0.2 gives 26.86.
+3. **Pure JS collapses at large γ.** α=0 (pure JS) gives FPR95 = 33.66 at γ=1.0, worse than the base 29.28; α=0.5 at γ=1.0 gives 26.59. This shows that the Spatial term acts to "keep large budgets stable".
+4. **The default γ=0.2 is a conservative but defensible point.** It follows from the criterion "auxiliary-term perturbation ≤ 20% σ_ID", which looks at ID only; see the leave-one-OOD-dataset check in `hyperparam_js_spatial_base4shot_hard.md` — a larger γ chosen on OOD does not transfer across datasets.
+5. **The robust region is large.** **48** of the 121 cells are no worse than the default point in FPR95, and they concentrate in a contiguous patch over γ∈[0.3, 0.8] × α∈[0.3, 0.9] (not isolated spikes), showing that the method is insensitive to hyperparameters. If space permits in the paper, the main results can be given in two columns, γ=0.2 (ID criterion) and γ=0.5.
 
